@@ -1,0 +1,17 @@
+type Invoice @entity {
+  id: ID!
+  status: String
+  createdAt: BigInt
+  paidAt: BigInt
+  creator: User
+  payer: User
+  price: BigInt
+  amountPaid: BigInt
+  holdPeriod: BigInt
+}
+
+type User @entity {
+  id: ID!
+  createdInvoices: [Invoice!]! @derivedFrom(field: "creator")
+  paidInvoices: [Invoice!]! @derivedFrom(field: "payer")
+}

@@ -1,0 +1,44 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: PaymentProcessorV1
+    network: polygon-amoy
+    source:
+      address: "0x3aceBd0b7024CB53880A397c763Ef658DfCD10e6"
+      abi: PaymentProcessorV1
+      startBlock: 17173517
+    mapping:
+      kind: ethereum
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Invoice
+        - PayersInvoice
+        - Creator
+        - Payer
+      abis:
+        - name: PaymentProcessorV1
+          file: ./abis/PaymentProcessorV1.json
+      eventHandlers:
+        - event: InvoiceAccepted(indexed uint256)
+          handler: handleInvoiceAccepted
+        - event: InvoiceCanceled(indexed uint256)
+          handler: handleInvoiceCanceled
+        - event: InvoiceCreated(indexed uint256,indexed address,indexed uint256)
+          handler: handleInvoiceCreated
+        - event: InvoicePaid(indexed uint256,indexed address,indexed uint256)
+          handler: handleInvoicePaid
+        - event: InvoiceRefunded(indexed uint256)
+          handler: handleInvoiceRefunded
+        - event: InvoiceRejected(indexed uint256)
+          handler: handleInvoiceRejected
+        - event: InvoiceReleased(indexed uint256)
+          handler: handleInvoiceReleased
+      callHandlers:
+        - function: setInvoiceHoldPeriod(uint256,uint32)
+          handler: handleHoldPeriod
+      file: ./src/mapping.ts
