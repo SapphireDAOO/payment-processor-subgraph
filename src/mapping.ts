@@ -8,7 +8,7 @@ import {
   InvoiceRejected as InvoiceRejectedEvent,
   InvoiceReleased as InvoiceReleasedEvent,
   PaymentProcessorV1,
-  SetInvoiceHoldPeriodCall,
+  UpdateHoldPeriod as UpdateHoldPeriodEvent,
 } from "../generated/PaymentProcessorV1/PaymentProcessorV1";
 import { Invoice, User } from "../generated/schema";
 
@@ -30,17 +30,17 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   entity.creator = invoiceCreator;
   entity.createdAt = event.block.timestamp;
   entity.price = event.params.price;
+  entity.contract = event.address;
   entity.save();
 }
 
-export function handleHoldPeriod(func: SetInvoiceHoldPeriodCall): void {
-  let invoiceId = func.inputs._invoiceId;
+export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
+  let invoiceId = event.params.invoiceId;
   let entity = Invoice.load(invoiceId.toString());
   if (!entity) return;
 
-  const holdPeriod = func.inputs._holdPeriod.plus(func.block.timestamp);
-
-  entity.holdPeriod = holdPeriod;
+  entity.releasedAt = event.params.releaseDueTimestamp;
+  entity.releaseHash = event.transaction.hash;
   entity.save();
 }
 
@@ -60,6 +60,7 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
   entity.paidAt = event.block.timestamp;
   entity.status = "PAID";
   entity.amountPaid = event.params.amountPaid;
+  entity.paymentTxHash = event.transaction.hash;
 
   entity.save();
 }
@@ -72,8 +73,8 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
     Address.fromString(PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
   );
 
-  if (!entity.holdPeriod)
-    entity.holdPeriod = event.block.timestamp.plus(pp.getDefaultHoldPeriod());
+  if (!entity.releasedAt)
+    entity.releasedAt = event.block.timestamp.plus(pp.getDefaultHoldPeriod());
 
   entity.status = "ACCEPTED";
 

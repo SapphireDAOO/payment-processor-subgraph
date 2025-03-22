@@ -7,7 +7,11 @@ type Invoice @entity {
   payer: User
   price: BigInt
   amountPaid: BigInt
-  holdPeriod: BigInt
+  releasedAt: BigInt
+  releaseHash: Bytes
+  paymentTxHash: Bytes
+  fee: BigInt
+  contract: Bytes
 }
 
 type User @entity {

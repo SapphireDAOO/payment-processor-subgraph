@@ -6,7 +6,7 @@
         "name": "_receiversAddress",
         "type": "address"
       },
-      { "internalType": "uint256", "name": "_fee", "type": "uint256" },
+      { "internalType": "uint256", "name": "_feeRate", "type": "uint256" },
       {
         "internalType": "uint256",
         "name": "_defaultHoldPeriod",
@@ -20,12 +20,13 @@
   { "inputs": [], "name": "AlreadyInitialized", "type": "error" },
   { "inputs": [], "name": "CreatorCannotPayOwnedInvoice", "type": "error" },
   { "inputs": [], "name": "ExcessivePayment", "type": "error" },
+  { "inputs": [], "name": "FeeTooHigh", "type": "error" },
   { "inputs": [], "name": "FeeValueCanNotBeZero", "type": "error" },
   { "inputs": [], "name": "HoldPeriodCanNotBeZero", "type": "error" },
   { "inputs": [], "name": "HoldPeriodHasNotBeenExceeded", "type": "error" },
   {
     "inputs": [],
-    "name": "HoldPeriodShouldBeGreaterThanDefault",
+    "name": "HoldPeriodShouldBeGreaterThanPrevious",
     "type": "error"
   },
   {
@@ -36,14 +37,15 @@
     "type": "error"
   },
   { "inputs": [], "name": "InvoiceAlreadyPaid", "type": "error" },
-  { "inputs": [], "name": "InvoiceDoesNotExist", "type": "error" },
   { "inputs": [], "name": "InvoiceHasAlreadyBeenReleased", "type": "error" },
+  { "inputs": [], "name": "InvoiceHasNotBeenAccepted", "type": "error" },
   { "inputs": [], "name": "InvoiceIsNoLongerValid", "type": "error" },
   { "inputs": [], "name": "InvoiceNotEligibleForRefund", "type": "error" },
   { "inputs": [], "name": "InvoiceNotPaid", "type": "error" },
   { "inputs": [], "name": "InvoicePriceIsTooLow", "type": "error" },
   { "inputs": [], "name": "NewOwnerIsZeroAddress", "type": "error" },
   { "inputs": [], "name": "NoHandoverRequest", "type": "error" },
+  { "inputs": [], "name": "ReleaseTimeOverflow", "type": "error" },
   { "inputs": [], "name": "TransferFailed", "type": "error" },
   { "inputs": [], "name": "Unauthorized", "type": "error" },
   { "inputs": [], "name": "ValueIsTooLow", "type": "error" },
@@ -209,6 +211,104 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "invoiceId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "releaseDueTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "UpdateHoldPeriod",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "ACCEPTANCE_WINDOW",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ACCEPTED",
+    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "BASIS_POINTS",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "CANCELLED",
+    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "CREATED",
+    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "PAID",
+    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "REFUNDED",
+    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "REJECTED",
+    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "RELEASED",
+    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "VALID_PERIOD",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_amount", "type": "uint256" }
+    ],
+    "name": "calculateFee",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       { "internalType": "uint256", "name": "_invoiceId", "type": "uint256" }
     ],
@@ -254,13 +354,6 @@
   },
   {
     "inputs": [],
-    "name": "getCurrentInvoiceId",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "getDefaultHoldPeriod",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
@@ -268,7 +361,7 @@
   },
   {
     "inputs": [],
-    "name": "getFee",
+    "name": "getFeeRate",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
@@ -299,14 +392,21 @@
           },
           { "internalType": "uint32", "name": "createdAt", "type": "uint32" },
           { "internalType": "uint32", "name": "paymentTime", "type": "uint32" },
-          { "internalType": "uint32", "name": "holdPeriod", "type": "uint32" },
+          { "internalType": "uint32", "name": "releaseAt", "type": "uint32" },
           { "internalType": "uint32", "name": "status", "type": "uint32" }
         ],
-        "internalType": "struct Invoice",
+        "internalType": "struct IPaymentProcessorV1.Invoice",
         "name": "",
         "type": "tuple"
       }
     ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getNextInvoiceId",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -386,9 +486,9 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_newFee", "type": "uint256" }
+      { "internalType": "uint256", "name": "_feeRate", "type": "uint256" }
     ],
-    "name": "setFee",
+    "name": "setFeeRate",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -411,7 +511,7 @@
       { "internalType": "uint256", "name": "_invoiceId", "type": "uint256" },
       { "internalType": "uint32", "name": "_holdPeriod", "type": "uint32" }
     ],
-    "name": "setInvoiceHoldPeriod",
+    "name": "setInvoiceReleaseTime",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
