@@ -13,7 +13,7 @@ import {
 import { Invoice, User } from "../generated/schema";
 
 const PAYMENT_PROCESSOR_CONTRACT_ADDRESS =
-  "0x3aceBd0b7024CB53880A397c763Ef658DfCD10e6";
+  "0xe067ec2b51f1d623824089b81c54a2097e38880c";
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   let entity = new Invoice(event.params.invoiceId.toString());
@@ -56,11 +56,18 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
     user.save();
   }
 
+  const pp = PaymentProcessorV1.bind(
+    Address.fromString(PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
+  );
+
+  const fee = pp.calculateFee(event.params.amountPaid);
+
   entity.payer = invoicePayer;
   entity.paidAt = event.block.timestamp;
   entity.status = "PAID";
   entity.amountPaid = event.params.amountPaid;
   entity.paymentTxHash = event.transaction.hash;
+  entity.fee = fee;
 
   entity.save();
 }

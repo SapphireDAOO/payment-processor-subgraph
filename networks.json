@@ -1,8 +1,8 @@
 {
   "polygon-amoy": {
     "PaymentProcessorV1": {
-      "address": "0x197A6A78b37A2F7DD0C632eFb81c9Ba3EeA3717f",
-      "startBlock": 19528044
+      "address": "0xe067ec2b51f1d623824089b81c54a2097e38880c",
+      "startBlock": 19678273
     }
   }
 }
