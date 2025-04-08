@@ -11,9 +11,7 @@ import {
   UpdateHoldPeriod as UpdateHoldPeriodEvent,
 } from "../generated/PaymentProcessorV1/PaymentProcessorV1";
 import { Invoice, User } from "../generated/schema";
-
-const PAYMENT_PROCESSOR_CONTRACT_ADDRESS =
-  "0xe067ec2b51f1d623824089b81c54a2097e38880c";
+import { PAYMENT_PROCESSOR_CONTRACT_ADDRESS } from "./util/constant";
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   let entity = new Invoice(event.params.invoiceId.toString());
@@ -40,7 +38,7 @@ export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
   if (!entity) return;
 
   entity.releasedAt = event.params.releaseDueTimestamp;
-  entity.releaseHash = event.transaction.hash;
+
   entity.save();
 }
 
@@ -56,18 +54,11 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
     user.save();
   }
 
-  const pp = PaymentProcessorV1.bind(
-    Address.fromString(PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
-  );
-
-  const fee = pp.calculateFee(event.params.amountPaid);
-
   entity.payer = invoicePayer;
   entity.paidAt = event.block.timestamp;
   entity.status = "PAID";
   entity.amountPaid = event.params.amountPaid;
   entity.paymentTxHash = event.transaction.hash;
-  entity.fee = fee;
 
   entity.save();
 }
@@ -80,11 +71,14 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
     Address.fromString(PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
   );
 
+  const result = pp.getInvoiceData(event.params.invoiceId);
+  const fee = pp.calculateFee(result.price);
+
   if (!entity.releasedAt)
     entity.releasedAt = event.block.timestamp.plus(pp.getDefaultHoldPeriod());
 
+  entity.fee = fee;
   entity.status = "ACCEPTED";
-
   entity.save();
 }
 
@@ -102,7 +96,6 @@ export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
   if (!entity) return;
 
   entity.status = "REFUNDED";
-
   entity.save();
 }
 
@@ -120,6 +113,7 @@ export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
   if (!entity) return;
 
   entity.status = "RELEASED";
+  entity.releaseHash = event.transaction.hash;
 
   entity.save();
 }

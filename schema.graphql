@@ -1,4 +1,4 @@
-type Invoice @entity {
+type Invoice @entity(immutable: false) {
   id: ID!
   status: String
   createdAt: BigInt
@@ -14,7 +14,7 @@ type Invoice @entity {
   contract: Bytes
 }
 
-type User @entity {
+type User @entity(immutable: false) {
   id: ID!
   createdInvoices: [Invoice!]! @derivedFrom(field: "creator")
   paidInvoices: [Invoice!]! @derivedFrom(field: "payer")
