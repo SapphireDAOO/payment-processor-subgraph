@@ -6,11 +6,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: PaymentProcessorV1
-    network: polygon-amoy
+    network: local
     source:
-      address: "0x972762b524f34bAb0a2730438089f5e8f0E5C12E"
+      address: "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512"
       abi: PaymentProcessorV1
-      startBlock: 20205655
+      startBlock: 0
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -38,4 +38,53 @@ dataSources:
           handler: handleInvoiceReleased
         - event: UpdateHoldPeriod(indexed uint256,indexed uint256)
           handler: handleHoldPeriod
-      file: ./src/mapping.ts
+      file: ./src/invoice.ts
+  - kind: ethereum
+    name: PaymentProcessorV2
+    network: local
+    source:
+      address: "0x5fc8d32690cc91d4c39d9d3abcbd16989f875707"
+      abi: PaymentProcessorV2
+      startBlock: 0
+    mapping:
+      kind: ethereum
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Invoice
+        - SmartInvoice
+        - MetaInvoice
+        - Payer
+      abis:
+        - name: PaymentProcessorV2
+          file: ./abis/PaymentProcessorV2.json
+      eventHandlers:
+        - event: InvoiceAccepted(indexed uint256)
+          handler: handleInvoiceAccepted
+        - event: InvoiceCanceled(indexed uint256)
+          handler: handleInvoiceCanceled
+        - event: InvoiceCreated(indexed uint256,(address,address,address,address,uint8,uint48,uint48,uint32,uint32,uint32,uint256,uint256,uint256))
+          handler: handleSmartInvoiceCreated
+        - event: InvoicePaid(indexed uint256,address,address,uint256)
+          handler: handleInvoicePaid
+        - event: InvoiceRejected(indexed uint256)
+          handler: handleInvoiceRejected
+        - event: MetaInvoiceCreated(indexed uint256,(address,uint256,uint256,uint256,address))
+          handler: handleMetaInvoiceCreated
+        - event: DisputeCreated(indexed uint256)
+          handler: handleDisputeCreated
+        - event: DisputeDismissed(indexed uint256)
+          handler: handleDisputeDismissed
+        - event: DisputeResolved(indexed uint256)
+          handler: handleDisputeResolved
+        - event: DisputeSettled(indexed uint256,uint256,uint256)
+          handler: handleDisputeSettled
+        - event: CancelationRequested(indexed uint256)
+          handler: handleCancelationRequested
+        - event: CancelationRequestHandled(indexed uint256,indexed bool)
+          handler: handleCancelationRequestHandled
+        - event: ExpiredInvoiceRefunded(indexed uint256)
+          handler: handleExpiredInvoiceRefunded
+        - event: PaymentReleased(indexed uint256)
+          handler: handlePaymentReleased
+      file: ./src/smartInvoice.ts

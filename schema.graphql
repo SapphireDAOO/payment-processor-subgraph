@@ -1,10 +1,11 @@
 type Invoice @entity(immutable: false) {
   id: ID!
-  status: String
+  invoiceId: String
+  state: String
   createdAt: BigInt
   paidAt: BigInt
-  creator: User
-  payer: User
+  seller: User
+  buyer: User
   price: BigInt
   amountPaid: BigInt
   releasedAt: BigInt
@@ -14,8 +15,39 @@ type Invoice @entity(immutable: false) {
   contract: Bytes
 }
 
+type SmartInvoice @entity(immutable: false) {
+  id: ID!
+  invoiceId: String
+  buyer: User
+  seller: User
+  escrow: Bytes
+  paymentToken: Bytes
+  state: String
+  paidAt: BigInt
+  createdAt: BigInt
+  releasedAt: BigInt
+  expiresAt: BigInt
+  cancelAt: BigInt
+  price: BigInt
+  amountPaid: BigInt
+  metaInvoice: MetaInvoice
+  contract: Bytes!
+}
+
+type MetaInvoice @entity(immutable: false) {
+  id: ID!
+  invoiceId: String
+  buyer: User
+  price: BigInt
+  contract: Bytes
+  invoices: [SmartInvoice!]! @derivedFrom(field: "metaInvoice")
+}
+
 type User @entity(immutable: false) {
   id: ID!
-  createdInvoices: [Invoice!]! @derivedFrom(field: "creator")
-  paidInvoices: [Invoice!]! @derivedFrom(field: "payer")
+  ownedInvoices: [Invoice!]! @derivedFrom(field: "seller")
+  paidInvoices: [Invoice!]! @derivedFrom(field: "buyer")
+  ownedSmartInvoices: [SmartInvoice!]! @derivedFrom(field: "seller")
+  paidSmartInvoices: [SmartInvoice!]! @derivedFrom(field: "buyer")
+  metaInvoices: [MetaInvoice!]! @derivedFrom(field: "buyer")
 }

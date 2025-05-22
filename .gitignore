@@ -32,3 +32,6 @@ typechain-types
 
 # Hardhat files
 cache
+
+bun.lock
+data
