@@ -1,4 +1,4 @@
-import { Address } from "@graphprotocol/graph-ts";
+import { Address, Bytes } from "@graphprotocol/graph-ts";
 import {
   InvoiceAccepted as InvoiceAcceptedEvent,
   InvoiceCanceled as InvoiceCanceledEvent,
@@ -11,31 +11,31 @@ import {
   UpdateHoldPeriod as UpdateHoldPeriodEvent,
 } from "../generated/PaymentProcessorV1/PaymentProcessorV1";
 import { Invoice, User } from "../generated/schema";
-import { PAYMENT_PROCESSOR_CONTRACT_ADDRESS } from "./util/constant";
+import { SIMPLE_PAYMENT_PROCESSOR_CONTRACT_ADDRESS } from "./util/constant";
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + event.params.invoice.invoiceId.toString();
   let entity = new Invoice(id);
 
-  let sellerId = event.params.creator.toHex();
+  let sellerId = event.params.invoice.seller.toHex();
   let seller = User.load(sellerId);
   if (!seller) {
     seller = new User(sellerId);
     seller.save();
   }
 
-  entity.invoiceId = event.params.invoiceId.toString();
+  entity.invoiceId = getInvoiceId(event.params.invoiceKey);
   entity.seller = sellerId;
   entity.state = "CREATED";
   entity.createdAt = event.block.timestamp;
-  entity.price = event.params.price;
+  entity.price = event.params.invoice.price;
   entity.contract = event.address;
 
   entity.save();
 }
 
 export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -44,11 +44,11 @@ export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
 }
 
 export function handleInvoicePaid(event: InvoicePaidEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
   let entity = Invoice.load(id);
   if (!entity) return;
 
-  let buyerId = event.params.payer.toHex();
+  let buyerId = event.params.buyer.toHex();
   let buyer = User.load(buyerId);
   if (!buyer) {
     buyer = new User(buyerId);
@@ -65,20 +65,22 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
 }
 
 export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  const simplePP = PaymentProcessorV1.bind(
+    Address.fromString(SIMPLE_PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
+  );
+  const invoiceKey = event.params.invoiceKey;
+
+  let id =
+    "invoice-" + simplePP.getInvoiceData(invoiceKey).invoiceId.toString();
   let entity = Invoice.load(id);
   if (!entity) return;
 
-  const processor = PaymentProcessorV1.bind(
-    Address.fromString(PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
-  );
-
-  const result = processor.getInvoiceData(event.params.invoiceId);
-  const fee = processor.calculateFee(result.price);
+  const result = simplePP.getInvoiceData(invoiceKey);
+  const fee = simplePP.calculateFee(result.price);
 
   if (!entity.releasedAt) {
     entity.releasedAt = event.block.timestamp.plus(
-      processor.getDefaultHoldPeriod()
+      simplePP.getDefaultHoldPeriod()
     );
   }
 
@@ -88,7 +90,7 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -97,7 +99,7 @@ export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
 }
 
 export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -106,7 +108,7 @@ export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
 }
 
 export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -115,11 +117,18 @@ export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
 }
 
 export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
   let entity = Invoice.load(id);
   if (!entity) return;
 
   entity.state = "RELEASED";
   entity.releaseHash = event.transaction.hash;
   entity.save();
+}
+
+function getInvoiceId(invoiceKey: Bytes): string {
+  const simplePP = PaymentProcessorV1.bind(
+    Address.fromString(SIMPLE_PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
+  );
+  return simplePP.getInvoiceData(invoiceKey).invoiceId.toString();
 }

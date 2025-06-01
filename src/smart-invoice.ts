@@ -1,3 +1,4 @@
+import { Address, Bytes } from "@graphprotocol/graph-ts";
 import {
   InvoiceAccepted as InvoiceAcceptedEvent,
   InvoiceCreated as InvoiceCreatedEvent,
@@ -13,12 +14,14 @@ import {
   PaymentReleased as PaymentReleasedEvent,
   InvoiceCreated as InvoiceCreatedV2Event,
   InvoicePaid as InvoicePaidV2Event,
+  PaymentProcessorV2,
 } from "../generated/PaymentProcessorV2/PaymentProcessorV2";
 
 import { SmartInvoice, MetaInvoice, User } from "../generated/schema";
+import { ADVANCED_PAYMENT_PROCESSOR_CONTRACT_ADDRESS } from "./util/constant";
 
 export function handleSmartInvoiceCreated(event: InvoiceCreatedV2Event): void {
-  const invoiceId = event.params.invoiceId.toString();
+  const invoiceId = event.params.invoice.invoiceId.toString();
   let id = "invoice-" + invoiceId;
   let invoice = new SmartInvoice(id);
 
@@ -50,7 +53,7 @@ export function handleSmartInvoiceCreated(event: InvoiceCreatedV2Event): void {
   invoice.cancelAt = event.params.invoice.timeBeforeCancelation;
   invoice.releasedAt = event.params.invoice.releaseWindow;
 
-  const metaInvoiceId = event.params.invoice.metaInvoiceId.toString();
+  const metaInvoiceId = getMetaInvoiceId(event.params.invoice.metaInvoiceKey);
 
   if (parseInt(metaInvoiceId) != 0) {
     invoice.metaInvoice = "meta-" + metaInvoiceId;
@@ -60,7 +63,7 @@ export function handleSmartInvoiceCreated(event: InvoiceCreatedV2Event): void {
 }
 
 export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
-  const invoiceId = event.params.id.toString();
+  const invoiceId = event.params.metaInvoice.invoiceId.toString();
   let id = "meta-" + invoiceId;
   let meta = new MetaInvoice(id);
 
@@ -79,7 +82,7 @@ export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
 }
 
 export function handleInvoicePaid(event: InvoicePaidV2Event): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
 
@@ -93,7 +96,7 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
 }
 
 export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
 
@@ -103,7 +106,7 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
 }
 
 export function handleInvoiceCanceled(event: InvoiceCreatedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
 
@@ -112,7 +115,7 @@ export function handleInvoiceCanceled(event: InvoiceCreatedEvent): void {
 }
 
 export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
 
@@ -121,7 +124,7 @@ export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
 }
 
 export function handleDisputeCreated(event: DisputeCreatedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = "DISPUTED";
@@ -129,7 +132,7 @@ export function handleDisputeCreated(event: DisputeCreatedEvent): void {
 }
 
 export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = "DISPUTE DISMISSED";
@@ -137,7 +140,7 @@ export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
 }
 
 export function handleDisputeResolved(event: DisputeResolvedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = "DISPUTE RESOLVED";
@@ -145,7 +148,7 @@ export function handleDisputeResolved(event: DisputeResolvedEvent): void {
 }
 
 export function handleDisputeSettled(event: DisputeSettledEvent): void {
-  let id = "invoice-" + event.params.id.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = "DISPUTE SETTLED";
@@ -155,7 +158,7 @@ export function handleDisputeSettled(event: DisputeSettledEvent): void {
 export function handleCancelationRequested(
   event: CancelationRequestedEvent
 ): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = "CANCELATION REQUESTED";
@@ -165,7 +168,7 @@ export function handleCancelationRequested(
 export function handleCancelationRequestHandled(
   event: CancelationRequestHandledEvent
 ): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = event.params.accepted
@@ -177,7 +180,7 @@ export function handleCancelationRequestHandled(
 export function handleExpiredInvoiceRefunded(
   event: ExpiredInvoiceRefundedEvent
 ): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = "EXPIRED_REFUNDED";
@@ -185,9 +188,23 @@ export function handleExpiredInvoiceRefunded(
 }
 
 export function handlePaymentReleased(event: PaymentReleasedEvent): void {
-  let id = "invoice-" + event.params.invoiceId.toString();
+  let id = "invoice-" + getSingleInvoiceId(event.params.invoiceKey);
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = "RELEASED";
   invoice.save();
+}
+
+function getSingleInvoiceId(invoiceKey: Bytes): string {
+  const advancedPP = PaymentProcessorV2.bind(
+    Address.fromString(ADVANCED_PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
+  );
+  return advancedPP.getInvoice(invoiceKey).invoiceId.toString();
+}
+
+function getMetaInvoiceId(invoiceKey: Bytes): string {
+  const advancedPP = PaymentProcessorV2.bind(
+    Address.fromString(ADVANCED_PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
+  );
+  return advancedPP.getMetaInvoice(invoiceKey).invoiceId.toString();
 }

@@ -22,23 +22,24 @@ dataSources:
         - name: PaymentProcessorV1
           file: ./abis/PaymentProcessorV1.json
       eventHandlers:
-        - event: InvoiceAccepted(indexed uint256)
+        - event: InvoiceAccepted(indexed bytes32)
           handler: handleInvoiceAccepted
-        - event: InvoiceCanceled(indexed uint256)
+        - event: InvoiceCanceled(indexed bytes32)
           handler: handleInvoiceCanceled
-        - event: InvoiceCreated(indexed uint256,indexed address,indexed uint256)
+        - event: InvoiceCreated(indexed bytes32,(uint256,address,address,address,uint256,uint256,uint32,uint32,uint32,uint32))
           handler: handleInvoiceCreated
-        - event: InvoicePaid(indexed uint256,indexed address,indexed uint256)
+        - event: InvoicePaid(indexed bytes32,indexed address,indexed uint256)
           handler: handleInvoicePaid
-        - event: InvoiceRefunded(indexed uint256)
+        - event: InvoiceRefunded(indexed bytes32)
           handler: handleInvoiceRefunded
-        - event: InvoiceRejected(indexed uint256)
+        - event: InvoiceRejected(indexed bytes32)
           handler: handleInvoiceRejected
-        - event: InvoiceReleased(indexed uint256)
+        - event: InvoiceReleased(indexed bytes32)
           handler: handleInvoiceReleased
-        - event: UpdateHoldPeriod(indexed uint256,indexed uint256)
+        - event: UpdateHoldPeriod(indexed bytes32,indexed uint256)
           handler: handleHoldPeriod
       file: ./src/invoice.ts
+
   - kind: ethereum
     name: PaymentProcessorV2
     network: local
@@ -59,32 +60,32 @@ dataSources:
         - name: PaymentProcessorV2
           file: ./abis/PaymentProcessorV2.json
       eventHandlers:
-        - event: InvoiceAccepted(indexed uint256)
+        - event: InvoiceAccepted(indexed bytes32)
           handler: handleInvoiceAccepted
-        - event: InvoiceCanceled(indexed uint256)
+        - event: InvoiceCanceled(indexed bytes32)
           handler: handleInvoiceCanceled
-        - event: InvoiceCreated(indexed uint256,(address,address,address,address,uint8,uint48,uint48,uint32,uint32,uint32,uint256,uint256,uint256))
+        - event: InvoiceCreated(indexed bytes32,(uint256,address,address,address,address,uint8,uint48,uint48,uint32,uint32,uint32,uint256,uint256,bytes32))
           handler: handleSmartInvoiceCreated
-        - event: InvoicePaid(indexed uint256,address,address,uint256)
+        - event: InvoicePaid(indexed bytes32,address,address,uint256)
           handler: handleInvoicePaid
-        - event: InvoiceRejected(indexed uint256)
+        - event: InvoiceRejected(indexed bytes32)
           handler: handleInvoiceRejected
-        - event: MetaInvoiceCreated(indexed uint256,(address,uint256,uint256,uint256,address))
+        - event: MetaInvoiceCreated(indexed bytes32,(address,uint256,uint256,uint256,address,uint256))
           handler: handleMetaInvoiceCreated
-        - event: DisputeCreated(indexed uint256)
+        - event: DisputeCreated(indexed bytes32)
           handler: handleDisputeCreated
-        - event: DisputeDismissed(indexed uint256)
+        - event: DisputeDismissed(indexed bytes32)
           handler: handleDisputeDismissed
-        - event: DisputeResolved(indexed uint256)
+        - event: DisputeResolved(indexed bytes32)
           handler: handleDisputeResolved
-        - event: DisputeSettled(indexed uint256,uint256,uint256)
+        - event: DisputeSettled(indexed bytes32,uint256,uint256)
           handler: handleDisputeSettled
-        - event: CancelationRequested(indexed uint256)
+        - event: CancelationRequested(indexed bytes32)
           handler: handleCancelationRequested
-        - event: CancelationRequestHandled(indexed uint256,indexed bool)
+        - event: CancelationRequestHandled(indexed bytes32,indexed bool)
           handler: handleCancelationRequestHandled
-        - event: ExpiredInvoiceRefunded(indexed uint256)
+        - event: ExpiredInvoiceRefunded(indexed bytes32)
           handler: handleExpiredInvoiceRefunded
-        - event: PaymentReleased(indexed uint256)
+        - event: PaymentReleased(indexed bytes32)
           handler: handlePaymentReleased
-      file: ./src/smartInvoice.ts
+      file: ./src/smart-invoice.ts
