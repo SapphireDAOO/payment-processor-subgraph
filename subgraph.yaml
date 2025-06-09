@@ -5,12 +5,12 @@ schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum
-    name: PaymentProcessorV1
-    network: local
+    name: SimplePaymentProcessor
+    network: polygon-amoy
     source:
-      address: "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512"
-      abi: PaymentProcessorV1
-      startBlock: 0
+      address: "0xB42f8799CaeE60F2C8aecE2844b483C79E55acfD"
+      abi: SimplePaymentProcessor
+      startBlock: 22675156
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -19,8 +19,8 @@ dataSources:
         - Invoice
         - Payer
       abis:
-        - name: PaymentProcessorV1
-          file: ./abis/PaymentProcessorV1.json
+        - name: SimplePaymentProcessor
+          file: ./abis/SimplePaymentProcessor.json
       eventHandlers:
         - event: InvoiceAccepted(indexed bytes32)
           handler: handleInvoiceAccepted
@@ -41,12 +41,12 @@ dataSources:
       file: ./src/invoice.ts
 
   - kind: ethereum
-    name: PaymentProcessorV2
-    network: local
+    name: AdvancedPaymentProcessor
+    network: polygon-amoy
     source:
-      address: "0x5fc8d32690cc91d4c39d9d3abcbd16989f875707"
-      abi: PaymentProcessorV2
-      startBlock: 0
+      address: "0x05e6989466427b0bc350DDD897538D8867b1bB58"
+      abi: AdvancedPaymentProcessor
+      startBlock: 22675156
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -57,14 +57,14 @@ dataSources:
         - MetaInvoice
         - Payer
       abis:
-        - name: PaymentProcessorV2
-          file: ./abis/PaymentProcessorV2.json
+        - name: AdvancedPaymentProcessor
+          file: ./abis/AdvancedPaymentProcessor.json
       eventHandlers:
         - event: InvoiceAccepted(indexed bytes32)
           handler: handleInvoiceAccepted
         - event: InvoiceCanceled(indexed bytes32)
           handler: handleInvoiceCanceled
-        - event: InvoiceCreated(indexed bytes32,(uint256,address,address,address,address,uint8,uint48,uint48,uint32,uint32,uint32,uint256,uint256,bytes32))
+        - event: InvoiceCreated(indexed bytes32,(uint256,address,address,address,address,address,uint8,uint8,uint48,uint48,uint32,uint32,uint32,uint256,uint256,bytes32))
           handler: handleSmartInvoiceCreated
         - event: InvoicePaid(indexed bytes32,address,address,uint256)
           handler: handleInvoicePaid

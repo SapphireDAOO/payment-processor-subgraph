@@ -7,14 +7,14 @@ import {
   InvoiceRefunded as InvoiceRefundedEvent,
   InvoiceRejected as InvoiceRejectedEvent,
   InvoiceReleased as InvoiceReleasedEvent,
-  PaymentProcessorV1,
+  SimplePaymentProcessor,
   UpdateHoldPeriod as UpdateHoldPeriodEvent,
-} from "../generated/PaymentProcessorV1/PaymentProcessorV1";
+} from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
 import { Invoice, User } from "../generated/schema";
 import { SIMPLE_PAYMENT_PROCESSOR_CONTRACT_ADDRESS } from "./util/constant";
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
-  let id = "invoice-" + event.params.invoice.invoiceId.toString();
+  let id = event.params.invoiceKey.toHex();
   let entity = new Invoice(id);
 
   let sellerId = event.params.invoice.seller.toHex();
@@ -24,7 +24,7 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
     seller.save();
   }
 
-  entity.invoiceId = getInvoiceId(event.params.invoiceKey);
+  entity.invoiceId = event.params.invoice.invoiceId.toString();
   entity.seller = sellerId;
   entity.state = "CREATED";
   entity.createdAt = event.block.timestamp;
@@ -35,7 +35,7 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
 }
 
 export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
-  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
+  let id = event.params.invoiceKey.toHex();
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -44,7 +44,7 @@ export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
 }
 
 export function handleInvoicePaid(event: InvoicePaidEvent): void {
-  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
+  let id = event.params.invoiceKey.toHex();
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -65,16 +65,15 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
 }
 
 export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
-  const simplePP = PaymentProcessorV1.bind(
-    Address.fromString(SIMPLE_PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
-  );
   const invoiceKey = event.params.invoiceKey;
 
-  let id =
-    "invoice-" + simplePP.getInvoiceData(invoiceKey).invoiceId.toString();
+  let id = event.params.invoiceKey.toHex();
   let entity = Invoice.load(id);
   if (!entity) return;
 
+  const simplePP = SimplePaymentProcessor.bind(
+    Address.fromString(SIMPLE_PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
+  );
   const result = simplePP.getInvoiceData(invoiceKey);
   const fee = simplePP.calculateFee(result.price);
 
@@ -90,7 +89,7 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
-  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
+  let id = event.params.invoiceKey.toHex();
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -99,7 +98,7 @@ export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
 }
 
 export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
-  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
+  let id = event.params.invoiceKey.toHex();
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -108,7 +107,7 @@ export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
 }
 
 export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
-  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
+  let id = event.params.invoiceKey.toHex();
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -117,18 +116,11 @@ export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
 }
 
 export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
-  let id = "invoice-" + getInvoiceId(event.params.invoiceKey);
+  let id = event.params.invoiceKey.toHex();
   let entity = Invoice.load(id);
   if (!entity) return;
 
   entity.state = "RELEASED";
   entity.releaseHash = event.transaction.hash;
   entity.save();
-}
-
-function getInvoiceId(invoiceKey: Bytes): string {
-  const simplePP = PaymentProcessorV1.bind(
-    Address.fromString(SIMPLE_PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
-  );
-  return simplePP.getInvoiceData(invoiceKey).invoiceId.toString();
 }
