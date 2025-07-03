@@ -27,7 +27,6 @@
   { "inputs": [], "name": "CancelationRequestDeadlinePassed", "type": "error" },
   { "inputs": [], "name": "DisputeWindowExpired", "type": "error" },
   { "inputs": [], "name": "DuplicateResolutionAttempt", "type": "error" },
-  { "inputs": [], "name": "EscrowAddressMismatch", "type": "error" },
   { "inputs": [], "name": "InvalidBuyer", "type": "error" },
   { "inputs": [], "name": "InvalidDisputeResolution", "type": "error" },
   { "inputs": [], "name": "InvalidInvoiceState", "type": "error" },
@@ -35,27 +34,28 @@
   { "inputs": [], "name": "InvalidNativePayment", "type": "error" },
   { "inputs": [], "name": "InvalidPaymentToken", "type": "error" },
   { "inputs": [], "name": "InvalidSellersPayoutShare", "type": "error" },
+  { "inputs": [], "name": "InvoiceAlreadyExists", "type": "error" },
   { "inputs": [], "name": "InvoiceDoesNotExist", "type": "error" },
   { "inputs": [], "name": "InvoiceExpired", "type": "error" },
   { "inputs": [], "name": "InvoiceResponseTimeExpired", "type": "error" },
   { "inputs": [], "name": "InvoiceStillActive", "type": "error" },
+  { "inputs": [], "name": "MetaInvoiceAlreadyExists", "type": "error" },
   { "inputs": [], "name": "NewOwnerIsZeroAddress", "type": "error" },
   { "inputs": [], "name": "NoHandoverRequest", "type": "error" },
-  { "inputs": [], "name": "NoShareAllocatedToBuyer", "type": "error" },
-  { "inputs": [], "name": "NoSubInvoiceCancelled", "type": "error" },
   { "inputs": [], "name": "NotAuthorized", "type": "error" },
+  { "inputs": [], "name": "OrderIsEmpty", "type": "error" },
+  { "inputs": [], "name": "PriceCannotBeZero", "type": "error" },
   { "inputs": [], "name": "Unauthorized", "type": "error" },
   { "inputs": [], "name": "UnauthorizedBuyer", "type": "error" },
   { "inputs": [], "name": "UnauthorizedParticipant", "type": "error" },
   { "inputs": [], "name": "UnauthorizedSeller", "type": "error" },
-  { "inputs": [], "name": "ZeroEscrowBalance", "type": "error" },
   {
     "anonymous": false,
     "inputs": [
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       },
       {
@@ -74,7 +74,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       }
     ],
@@ -87,7 +87,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       }
     ],
@@ -100,7 +100,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       }
     ],
@@ -113,7 +113,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       }
     ],
@@ -126,7 +126,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       },
       {
@@ -151,7 +151,20 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "EarlyRelease",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "orderId",
         "type": "bytes32"
       },
       {
@@ -170,7 +183,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       }
     ],
@@ -183,7 +196,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       }
     ],
@@ -196,7 +209,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       }
     ],
@@ -209,7 +222,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       },
       {
@@ -259,9 +272,10 @@
           },
           {
             "internalType": "bytes32",
-            "name": "metaInvoiceKey",
+            "name": "metaInvoiceId",
             "type": "bytes32"
-          }
+          },
+          { "internalType": "bytes32", "name": "orderId", "type": "bytes32" }
         ],
         "indexed": false,
         "internalType": "struct IAdvancedPaymentProcessor.Invoice",
@@ -278,7 +292,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       },
       {
@@ -309,7 +323,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       }
     ],
@@ -322,26 +336,14 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "metaInvoiceKey",
+        "name": "metaInvoiceId",
         "type": "bytes32"
       },
       {
-        "components": [
-          { "internalType": "address", "name": "buyer", "type": "address" },
-          { "internalType": "uint256", "name": "price", "type": "uint256" },
-          { "internalType": "uint256", "name": "upper", "type": "uint256" },
-          { "internalType": "uint256", "name": "lower", "type": "uint256" },
-          {
-            "internalType": "address",
-            "name": "paymentToken",
-            "type": "address"
-          },
-          { "internalType": "uint256", "name": "invoiceId", "type": "uint256" }
-        ],
-        "indexed": false,
-        "internalType": "struct IAdvancedPaymentProcessor.MetaInvoice",
-        "name": "metaInvoice",
-        "type": "tuple"
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "totalPrice",
+        "type": "uint256"
       }
     ],
     "name": "MetaInvoiceCreated",
@@ -398,7 +400,7 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "invoiceKey",
+        "name": "orderId",
         "type": "bytes32"
       }
     ],
@@ -416,27 +418,6 @@
     "inputs": [],
     "name": "BASIS_POINTS",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "CANCELATION_ACCEPTED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "CANCELATION_REJECTED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "CANCELATION_REQUESTED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -505,13 +486,6 @@
   },
   {
     "inputs": [],
-    "name": "REJECTED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "RELEASED",
     "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
     "stateMutability": "view",
@@ -519,11 +493,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32[]",
-        "name": "invoiceKeys",
-        "type": "bytes32[]"
-      }
+      { "internalType": "bytes32", "name": "orderId", "type": "bytes32" }
     ],
     "name": "acceptInvoice",
     "outputs": [],
@@ -532,29 +502,16 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" }
+      { "internalType": "bytes32[]", "name": "orderIds", "type": "bytes32[]" }
     ],
-    "name": "acceptInvoice",
+    "name": "acceptInvoices",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32[]",
-        "name": "invoiceKeys",
-        "type": "bytes32[]"
-      }
-    ],
-    "name": "cancelInvoice",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" }
+      { "internalType": "bytes32", "name": "orderId", "type": "bytes32" }
     ],
     "name": "cancelInvoice",
     "outputs": [],
@@ -570,7 +527,7 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" }
+      { "internalType": "bytes32", "name": "orderId", "type": "bytes32" }
     ],
     "name": "claimExpiredInvoiceRefunds",
     "outputs": [],
@@ -590,7 +547,7 @@
     "inputs": [
       { "internalType": "address", "name": "seller", "type": "address" },
       { "internalType": "address", "name": "buyer", "type": "address" },
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" }
+      { "internalType": "bytes32", "name": "orderId", "type": "bytes32" }
     ],
     "name": "computeSalt",
     "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
@@ -599,7 +556,7 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" }
+      { "internalType": "bytes32", "name": "orderId", "type": "bytes32" }
     ],
     "name": "createDispute",
     "outputs": [],
@@ -608,11 +565,10 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "buyer", "type": "address" },
       {
         "components": [
+          { "internalType": "string", "name": "orderId", "type": "string" },
           { "internalType": "address", "name": "seller", "type": "address" },
-          { "internalType": "address", "name": "buyer", "type": "address" },
           {
             "internalType": "uint32",
             "name": "invoiceExpiryDuration",
@@ -644,8 +600,8 @@
     "inputs": [
       {
         "components": [
+          { "internalType": "string", "name": "orderId", "type": "string" },
           { "internalType": "address", "name": "seller", "type": "address" },
-          { "internalType": "address", "name": "buyer", "type": "address" },
           {
             "internalType": "uint32",
             "name": "invoiceExpiryDuration",
@@ -675,7 +631,7 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" }
+      { "internalType": "bytes32", "name": "orderId", "type": "bytes32" }
     ],
     "name": "getInvoice",
     "outputs": [
@@ -726,9 +682,10 @@
           },
           {
             "internalType": "bytes32",
-            "name": "metaInvoiceKey",
+            "name": "metaInvoiceId",
             "type": "bytes32"
-          }
+          },
+          { "internalType": "bytes32", "name": "orderId", "type": "bytes32" }
         ],
         "internalType": "struct IAdvancedPaymentProcessor.Invoice",
         "name": "",
@@ -747,37 +704,29 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" }
+      { "internalType": "bytes32", "name": "metaInvoiceId", "type": "bytes32" }
     ],
     "name": "getMetaInvoice",
     "outputs": [
       {
         "components": [
-          { "internalType": "address", "name": "buyer", "type": "address" },
           { "internalType": "uint256", "name": "price", "type": "uint256" },
-          { "internalType": "uint256", "name": "upper", "type": "uint256" },
-          { "internalType": "uint256", "name": "lower", "type": "uint256" },
           {
             "internalType": "address",
             "name": "paymentToken",
             "type": "address"
           },
-          { "internalType": "uint256", "name": "invoiceId", "type": "uint256" }
+          {
+            "internalType": "bytes32[]",
+            "name": "subInvoiceIds",
+            "type": "bytes32[]"
+          }
         ],
         "internalType": "struct IAdvancedPaymentProcessor.MetaInvoice",
         "name": "",
         "type": "tuple"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" }
-    ],
-    "name": "getMetaInvoiceIdForSub",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -816,17 +765,7 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" },
-      { "internalType": "bool", "name": "accept", "type": "bool" }
-    ],
-    "name": "handleCancelationRequest",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "orderId", "type": "bytes32" },
       { "internalType": "uint8", "name": "resolution", "type": "uint8" },
       { "internalType": "uint256", "name": "sellerShare", "type": "uint256" }
     ],
@@ -857,7 +796,7 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "orderId", "type": "bytes32" },
       { "internalType": "address", "name": "paymentToken", "type": "address" }
     ],
     "name": "payMetaInvoice",
@@ -867,7 +806,7 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "orderId", "type": "bytes32" },
       { "internalType": "address", "name": "paymentToken", "type": "address" }
     ],
     "name": "paySingleInvoice",
@@ -890,7 +829,7 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" }
+      { "internalType": "bytes32", "name": "orderId", "type": "bytes32" }
     ],
     "name": "releasePayment",
     "outputs": [],
@@ -905,28 +844,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" }
-    ],
-    "name": "requestCancelation",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32[]",
-        "name": "invoiceKeys",
-        "type": "bytes32[]"
-      }
-    ],
-    "name": "requestCancelation",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "requestOwnershipHandover",
     "outputs": [],
@@ -935,7 +852,8 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "invoiceKey", "type": "bytes32" }
+      { "internalType": "bytes32", "name": "orderId", "type": "bytes32" },
+      { "internalType": "address", "name": "sender", "type": "address" }
     ],
     "name": "resolveDispute",
     "outputs": [],

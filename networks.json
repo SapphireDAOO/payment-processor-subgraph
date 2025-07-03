@@ -1,12 +1,22 @@
 {
-  "polygon-amoy": {
+  "sepolia": {
     "SimplePaymentProcessor": {
-      "address": "0xB42f8799CaeE60F2C8aecE2844b483C79E55acfD",
-      "startBlock": 22675156
+      "address": "0xC39eF2B61E47923db6f89f4E7Fda583b0b7cf8CE",
+      "startBlock": 8682536
     },
     "AdvancedPaymentProcessor": {
-      "address": "0x05e6989466427b0bc350DDD897538D8867b1bB58",
-      "startBlock": 22675156
+      "address": "0xb9DD118C880759E62516fa2c88Eb76ba3fd42eae",
+      "startBlock": 8682536
+    }
+  },
+  "polygon-amoy": {
+    "SimplePaymentProcessor": {
+      "address": "0x7A22CbFBe8eb4a450bADa813c1feD96b25cFF864",
+      "startBlock": 23085849
+    },
+    "AdvancedPaymentProcessor": {
+      "address": "0x57BFD7c3D1d14b82AB7Ad135B2E56e330F65D27f",
+      "startBlock": 23085849
     }
   }
 }

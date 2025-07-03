@@ -1,4 +1,4 @@
-import { Address, Bytes } from "@graphprotocol/graph-ts";
+import { Address } from "@graphprotocol/graph-ts";
 import {
   InvoiceAccepted as InvoiceAcceptedEvent,
   InvoiceCanceled as InvoiceCanceledEvent,
@@ -10,12 +10,15 @@ import {
   SimplePaymentProcessor,
   UpdateHoldPeriod as UpdateHoldPeriodEvent,
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
-import { Invoice, User } from "../generated/schema";
+import { Invoice, Type, User } from "../generated/schema";
 import { SIMPLE_PAYMENT_PROCESSOR_CONTRACT_ADDRESS } from "./util/constant";
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   let id = event.params.invoiceKey.toHex();
   let entity = new Invoice(id);
+
+  let invoiceType = new Type(id);
+  invoiceType.type = "invoice";
 
   let sellerId = event.params.invoice.seller.toHex();
   let seller = User.load(sellerId);
@@ -31,6 +34,7 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   entity.price = event.params.invoice.price;
   entity.contract = event.address;
 
+  invoiceType.save();
   entity.save();
 }
 
