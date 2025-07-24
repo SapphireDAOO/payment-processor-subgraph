@@ -1,21 +1,16 @@
-import { Address } from "@graphprotocol/graph-ts";
+import { BigInt } from "@graphprotocol/graph-ts";
 import {
-  InvoiceAccepted as InvoiceAcceptedEvent,
   InvoiceCreated as InvoiceCreatedEvent,
-  InvoiceRejected as InvoiceRejectedEvent,
   MetaInvoiceCreated as MetaInvoiceCreatedEvent,
   DisputeCreated as DisputeCreatedEvent,
   DisputeDismissed as DisputeDismissedEvent,
   DisputeResolved as DisputeResolvedEvent,
   DisputeSettled as DisputeSettledEvent,
-  CancelationRequested as CancelationRequestedEvent,
-  CancelationRequestHandled as CancelationRequestHandledEvent,
-  ExpiredInvoiceRefunded as ExpiredInvoiceRefundedEvent,
   PaymentReleased as PaymentReleasedEvent,
   InvoicePaid as InvoicePaidV2Event,
   InvoiceCanceled as InvoiceCanceledEvent,
   SetPriceFeedCall,
-  AdvancedPaymentProcessor,
+  Refunded as RefundedEvent,
 } from "../generated/AdvancedPaymentProcessor/AdvancedPaymentProcessor";
 
 import {
@@ -25,20 +20,12 @@ import {
   PaymentToken,
   Type,
   AdminAction,
-  ParentOrder,
 } from "../generated/schema";
 import { getTokenData } from "./util/token";
 
 export function handleSmartInvoiceCreated(event: InvoiceCreatedEvent): void {
   const invoiceId = event.params.invoice.invoiceId.toString();
   let id = event.params.orderId.toHex();
-
-  const orderId = event.params.invoice.orderId.toHex();
-  let orderEntity = ParentOrder.load(orderId);
-
-  if (!orderEntity) {
-    orderEntity = new ParentOrder(orderId);
-  }
 
   let invoice = new SmartInvoice(id);
 
@@ -61,29 +48,22 @@ export function handleSmartInvoiceCreated(event: InvoiceCreatedEvent): void {
     seller.save();
   }
 
-  invoice.invoiceId = invoiceId;
   invoice.buyer = buyerId;
   invoice.seller = sellerId;
   invoice.createdAt = event.block.timestamp;
   invoice.state = "CREATED";
   invoice.price = event.params.invoice.price;
   invoice.contract = event.address;
-  invoice.expiresAt = event.block.timestamp.plus(
-    event.params.invoice.invoiceExpiryDuration
-  );
-  invoice.cancelAt = event.params.invoice.timeBeforeCancelation;
-  invoice.releasedAt = event.params.invoice.releaseWindow;
-  invoice.parentOrderId = orderId;
-  invoice.orderId = event.params.invoice.orderId.toHex();
+  invoice.orderId = event.params.invoice.invoiceId.toHex();
+  invoice.invoiceId = id;
 
   invoiceType.save();
   adminActionsEntity.save();
   invoice.save();
-  orderEntity.save();
 }
 
 export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
-  let id = event.params.metaInvoiceId.toString();
+  let id = event.params.metaInvoiceId.toHex();
   let meta = new MetaInvoice(id);
 
   let invoiceType = new Type(id);
@@ -120,21 +100,11 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   invoice.paidAt = event.block.timestamp;
   invoice.buyer = buyerId;
   invoice.amountPaid = event.params.amount;
-  invoice.paymentToken = event.params.paymentToken;
+  invoice.balance = event.params.amount;
+  invoice.paymentToken = event.params.paymentToken.toHex();
   invoice.state = "PAID";
-  invoice.cancelAt = invoice.cancelAt!.plus(event.block.timestamp);
   invoice.escrow = event.params.escrowAddress;
   invoice.paymentTxHash = event.block.hash;
-  invoice.save();
-}
-
-export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
-  let id = event.params.orderId.toHex();
-  let invoice = SmartInvoice.load(id);
-  if (!invoice) return;
-
-  invoice.state = "ACCEPTED";
-  invoice.releasedAt = invoice.releasedAt!.plus(event.block.timestamp);
   invoice.save();
 }
 
@@ -144,15 +114,6 @@ export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
   if (!invoice) return;
 
   invoice.state = "CANCELED";
-  invoice.save();
-}
-
-export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
-  let id = event.params.orderId.toHex();
-  let invoice = SmartInvoice.load(id);
-  if (!invoice) return;
-
-  invoice.state = "REJECTED";
   invoice.save();
 }
 
@@ -203,33 +164,14 @@ export function handleDisputeSettled(event: DisputeSettledEvent): void {
   invoice.save();
 }
 
-export function handleCancelationRequested(
-  event: CancelationRequestedEvent
-): void {
+export function handleRefunded(event: RefundedEvent): void {
   let id = event.params.orderId.toHex();
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
-  invoice.state = "CANCELATION REQUESTED";
-  invoice.save();
-}
 
-export function handleCancelationRequestHandled(
-  event: CancelationRequestHandledEvent
-): void {
-  let id = event.params.orderId.toHex();
-  let invoice = SmartInvoice.load(id);
-  if (!invoice) return;
-  invoice.state = event.params.accepted ? "REFUNDED" : "ACCEPTED";
-  invoice.save();
-}
-
-export function handleExpiredInvoiceRefunded(
-  event: ExpiredInvoiceRefundedEvent
-): void {
-  let id = event.params.orderId.toHex();
-  let invoice = SmartInvoice.load(id);
-  if (!invoice) return;
-  invoice.state = "REFUNDED";
+  if (invoice.balance) {
+    invoice.balance = invoice.balance!.minus(event.params.amount);
+  }
   invoice.save();
 }
 
@@ -240,6 +182,7 @@ export function handlePaymentReleased(event: PaymentReleasedEvent): void {
   invoice.state = "RELEASED";
   invoice.releasedAt = event.block.timestamp;
   invoice.releaseHash = event.block.hash;
+  invoice.balance = new BigInt(0);
 
   let adminActionsEntity = AdminAction.load(id);
   if (!adminActionsEntity) return;

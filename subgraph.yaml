@@ -9,8 +9,8 @@ dataSources:
     network: sepolia
     source:
       abi: SimplePaymentProcessor
-      address: "0xC39eF2B61E47923db6f89f4E7Fda583b0b7cf8CE"
-      startBlock: 8682536
+      address: "0xE00bDCE91730Be73C4a133cD908ec047d742499b"
+      startBlock: 8799940
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -45,8 +45,8 @@ dataSources:
     network: sepolia
     source:
       abi: AdvancedPaymentProcessor
-      address: "0xb9DD118C880759E62516fa2c88Eb76ba3fd42eae"
-      startBlock: 8682536
+      address: "0x1A1b771B7e6cE617d22A148d08d0395Ca29f208a"
+      startBlock: 8799940
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -63,19 +63,12 @@ dataSources:
         - name: ERC20
           file: ./abis/ERC20.json
       eventHandlers:
-        - event: InvoiceAccepted(indexed bytes32)
-          handler: handleInvoiceAccepted
-        - event: InvoiceCanceled(indexed bytes32)
-          handler: handleInvoiceCanceled
-        - event: InvoiceCreated(indexed
-            bytes32,(uint256,address,address,address,address,address,uint8,uint8,uint48,uint48,uint32,uint32,uint32,uint256,uint256,bytes32,bytes32))
+        - event: InvoiceCreated(indexed bytes32,(uint256,address,address,address,address,uint8,uint48,uint48,uint256,uint256,uint256,bytes32))
           handler: handleSmartInvoiceCreated
         - event: InvoicePaid(indexed bytes32,address,address,uint256)
           handler: handleInvoicePaid
-        - event: InvoiceRejected(indexed bytes32)
-          handler: handleInvoiceRejected
-        - event: MetaInvoiceCreated(indexed bytes32,indexed uint256)
-          handler: handleMetaInvoiceCreated
+        - event: InvoiceCanceled(indexed bytes32)
+          handler: handleInvoiceCanceled
         - event: DisputeCreated(indexed bytes32)
           handler: handleDisputeCreated
         - event: DisputeDismissed(indexed bytes32)
@@ -84,14 +77,12 @@ dataSources:
           handler: handleDisputeResolved
         - event: DisputeSettled(indexed bytes32,uint256,uint256)
           handler: handleDisputeSettled
-        - event: CancelationRequested(indexed bytes32)
-          handler: handleCancelationRequested
-        - event: CancelationRequestHandled(indexed bytes32,indexed bool)
-          handler: handleCancelationRequestHandled
-        - event: ExpiredInvoiceRefunded(indexed bytes32)
-          handler: handleExpiredInvoiceRefunded
-        - event: PaymentReleased(indexed bytes32)
+        - event: MetaInvoiceCreated(indexed bytes32,indexed uint256)
+          handler: handleMetaInvoiceCreated
+        - event: PaymentReleased(indexed bytes32,uint256,uint256)
           handler: handlePaymentReleased
+        - event: Refunded(indexed bytes32,indexed uint256)
+          handler: handleRefunded
       callHandlers:
         - function: setPriceFeed(address,address)
           handler: handleAllowedTokens

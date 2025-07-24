@@ -17,30 +17,22 @@ type Invoice @entity(immutable: false) {
 
 type SmartInvoice @entity(immutable: false) {
   id: ID!
-  invoiceId: String
   orderId: String
   buyer: User
   seller: User
   escrow: Bytes
-  paymentToken: Bytes
+  balance: BigInt
+  paymentToken: PaymentToken
   paymentTxHash: Bytes
   releaseHash: Bytes
   state: String
   paidAt: BigInt
-  createdAt: BigInt
   releasedAt: BigInt
-  expiresAt: BigInt
-  cancelAt: BigInt
+  createdAt: BigInt
   price: BigInt
   amountPaid: BigInt
-  parentOrderId: ParentOrder
   contract: Bytes!
-}
-
-
-type ParentOrder @entity(immutable: false) {
-  id: ID!
-  invoices: [SmartInvoice!]! @derivedFrom(field: "parentOrderId")
+  invoiceId: String
 }
 
 type MetaInvoice @entity(immutable: false) {
