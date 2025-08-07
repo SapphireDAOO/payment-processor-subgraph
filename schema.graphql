@@ -13,6 +13,7 @@ type Invoice @entity(immutable: false) {
   paymentTxHash: Bytes
   fee: BigInt
   contract: Bytes
+  creationTxHash: String
 }
 
 type SmartInvoice @entity(immutable: false) {
@@ -33,6 +34,7 @@ type SmartInvoice @entity(immutable: false) {
   amountPaid: BigInt
   contract: Bytes!
   invoiceId: String
+  creationTxHash: String
 }
 
 type MetaInvoice @entity(immutable: false) {
@@ -58,6 +60,9 @@ type AdminAction @entity(immutable: false) {
   action: String
   time: BigInt
   type: String
+  txHash: String
+  balance: BigInt
+  currency: PaymentToken
 }
 
 type PaymentToken @entity(immutable: false) {

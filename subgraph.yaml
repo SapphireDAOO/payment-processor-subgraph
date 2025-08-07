@@ -45,8 +45,8 @@ dataSources:
     network: sepolia
     source:
       abi: AdvancedPaymentProcessor
-      address: "0x1A1b771B7e6cE617d22A148d08d0395Ca29f208a"
-      startBlock: 8799940
+      address: "0x80D9b6eA9dE65A4cDB5cE106D7690F56B2695102"
+      startBlock: 8883725
     mapping:
       kind: ethereum
       apiVersion: 0.0.7

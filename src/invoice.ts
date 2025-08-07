@@ -33,6 +33,7 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   entity.createdAt = event.block.timestamp;
   entity.price = event.params.invoice.price;
   entity.contract = event.address;
+  entity.creationTxHash = event.transaction.hash.toHex();
 
   invoiceType.save();
   entity.save();

@@ -34,7 +34,8 @@ export function handleSmartInvoiceCreated(event: InvoiceCreatedEvent): void {
   adminActionsEntity.action = "CREATED";
   adminActionsEntity.time = event.block.timestamp;
   adminActionsEntity.invoiceId = invoiceId;
-  adminActionsEntity.type = "SINGLE INVOICE";
+  adminActionsEntity.type = "INVOICE";
+  adminActionsEntity.txHash = event.transaction.hash.toHex();
 
   let invoiceType = new Type(id);
   invoiceType.type = "smart-invoice";
@@ -56,6 +57,7 @@ export function handleSmartInvoiceCreated(event: InvoiceCreatedEvent): void {
   invoice.contract = event.address;
   invoice.orderId = event.params.invoice.invoiceId.toHex();
   invoice.invoiceId = id;
+  invoice.creationTxHash = event.transaction.hash.toHex();
 
   invoiceType.save();
   adminActionsEntity.save();
@@ -75,14 +77,15 @@ export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
   adminActionsEntity.time = event.block.timestamp;
   adminActionsEntity.invoiceId = id;
   adminActionsEntity.type = "META INVOICE";
+  adminActionsEntity.txHash = event.transaction.hash.toHex();
 
   meta.invoiceId = id;
   meta.price = event.params.totalPrice;
   meta.contract = event.address;
   meta.save();
 
-  adminActionsEntity.save();
   invoiceType.save();
+  adminActionsEntity.save();
 }
 
 export function handleInvoicePaid(event: InvoicePaidV2Event): void {
@@ -106,6 +109,13 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   invoice.escrow = event.params.escrowAddress;
   invoice.paymentTxHash = event.block.hash;
   invoice.save();
+
+  let adminActionsEntity = AdminAction.load(id);
+  if (!adminActionsEntity) return;
+  adminActionsEntity.balance = invoice.amountPaid;
+  adminActionsEntity.currency = invoice.paymentToken;
+
+  adminActionsEntity.save();
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
@@ -114,7 +124,14 @@ export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
   if (!invoice) return;
 
   invoice.state = "CANCELED";
+
+  let adminActionsEntity = AdminAction.load(id);
+  if (!adminActionsEntity) return;
+  adminActionsEntity.action = "CANCELED";
+  adminActionsEntity.txHash = event.transaction.hash.toHex();
+
   invoice.save();
+  adminActionsEntity.save();
 }
 
 export function handleDisputeCreated(event: DisputeCreatedEvent): void {
@@ -122,7 +139,14 @@ export function handleDisputeCreated(event: DisputeCreatedEvent): void {
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = "DISPUTED";
+
+  let adminActionsEntity = AdminAction.load(id);
+  if (!adminActionsEntity) return;
+  adminActionsEntity.action = "DISPUTED";
+  adminActionsEntity.txHash = event.transaction.hash.toHex();
+
   invoice.save();
+  adminActionsEntity.save();
 }
 
 export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
@@ -132,10 +156,10 @@ export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
   invoice.state = "DISPUTE DISMISSED";
 
   let adminActionsEntity = AdminAction.load(id);
-
   if (!adminActionsEntity) return;
 
-  adminActionsEntity.action = "DISMISSED DISPUTE";
+  adminActionsEntity.action = "DISPUTE DISMISSED";
+  adminActionsEntity.txHash = event.transaction.hash.toHex();
 
   adminActionsEntity.save();
 
@@ -145,20 +169,32 @@ export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
 export function handleDisputeResolved(event: DisputeResolvedEvent): void {
   let id = event.params.orderId.toHex();
   let invoice = SmartInvoice.load(id);
+
+  const state = "DISPUTE RESOLVED";
+
   if (!invoice) return;
-  invoice.state = "DISPUTE RESOLVED";
+  invoice.state = state;
+
+  let adminActionsEntity = AdminAction.load(id);
+  if (!adminActionsEntity) return;
+  adminActionsEntity.action = state;
+
   invoice.save();
+  adminActionsEntity.save();
 }
 
 export function handleDisputeSettled(event: DisputeSettledEvent): void {
   let id = event.params.orderId.toHex();
   let invoice = SmartInvoice.load(id);
+
+  const state = "DISPUTE SETTLED";
+
   if (!invoice) return;
-  invoice.state = "DISPUTE SETTLED";
+  invoice.state = state;
 
   let adminActionsEntity = AdminAction.load(id);
   if (!adminActionsEntity) return;
-  adminActionsEntity.action = "SETTLED DISPUTE";
+  adminActionsEntity.action = state;
 
   adminActionsEntity.save();
   invoice.save();
@@ -172,7 +208,20 @@ export function handleRefunded(event: RefundedEvent): void {
   if (invoice.balance) {
     invoice.balance = invoice.balance!.minus(event.params.amount);
   }
+
+  let adminActionsEntity = AdminAction.load(id);
+  if (!adminActionsEntity) return;
+
+  if (invoice.balance!.equals(new BigInt(0))) {
+    adminActionsEntity.action = "REFUNDED";
+  } else {
+    adminActionsEntity.action = "PARTIAL REFUND";
+  }
+
+  adminActionsEntity.balance = invoice.balance;
+
   invoice.save();
+  adminActionsEntity.save();
 }
 
 export function handlePaymentReleased(event: PaymentReleasedEvent): void {
@@ -181,12 +230,13 @@ export function handlePaymentReleased(event: PaymentReleasedEvent): void {
   if (!invoice) return;
   invoice.state = "RELEASED";
   invoice.releasedAt = event.block.timestamp;
-  invoice.releaseHash = event.block.hash;
+  invoice.releaseHash = event.transaction.hash;
   invoice.balance = new BigInt(0);
 
   let adminActionsEntity = AdminAction.load(id);
   if (!adminActionsEntity) return;
   adminActionsEntity.action = "RELEASED";
+  adminActionsEntity.balance = new BigInt(0);
 
   adminActionsEntity.save();
   invoice.save();
