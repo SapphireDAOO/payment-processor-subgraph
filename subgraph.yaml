@@ -9,8 +9,8 @@ dataSources:
     network: sepolia
     source:
       abi: SimplePaymentProcessor
-      address: "0xE00bDCE91730Be73C4a133cD908ec047d742499b"
-      startBlock: 8799940
+      address: "0x0363820C54670800d71A0098c96B53Cf11193F6F"
+      startBlock: 8969949
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -45,8 +45,8 @@ dataSources:
     network: sepolia
     source:
       abi: AdvancedPaymentProcessor
-      address: "0x80D9b6eA9dE65A4cDB5cE106D7690F56B2695102"
-      startBlock: 8883725
+      address: "0x8f73c398ECcd94874752c1dFa48F20A092C8Cf86"
+      startBlock: 8969949
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
