@@ -12,9 +12,10 @@ import {
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
 import { Invoice, Type, User } from "../generated/schema";
 import { SIMPLE_PAYMENT_PROCESSOR_CONTRACT_ADDRESS } from "./util/constant";
+import { getDefaultHoldPeriod, getFee } from "./util/storage";
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
-  let id = event.params.invoiceKey.toHex();
+  let id = event.params.orderId.toString();
   let entity = new Invoice(id);
 
   let invoiceType = new Type(id);
@@ -40,7 +41,7 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
 }
 
 export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
-  let id = event.params.invoiceKey.toHex();
+  let id = event.params.orderId.toString();
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -49,7 +50,7 @@ export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
 }
 
 export function handleInvoicePaid(event: InvoicePaidEvent): void {
-  let id = event.params.invoiceKey.toHex();
+  let id = event.params.orderId.toString();
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -70,31 +71,25 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
 }
 
 export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
-  const invoiceKey = event.params.invoiceKey;
-
-  let id = event.params.invoiceKey.toHex();
+  let id = event.params.orderId.toString();
   let entity = Invoice.load(id);
   if (!entity) return;
 
-  const simplePP = SimplePaymentProcessor.bind(
-    Address.fromString(SIMPLE_PAYMENT_PROCESSOR_CONTRACT_ADDRESS)
-  );
-  const result = simplePP.getInvoiceData(invoiceKey);
-  const fee = simplePP.calculateFee(result.price);
+  entity.commisionTxHash = event.transaction.hash;
 
   if (!entity.releasedAt) {
     entity.releasedAt = event.block.timestamp.plus(
-      simplePP.getDefaultHoldPeriod()
+      getDefaultHoldPeriod().defaultHoldPeriod
     );
   }
 
-  entity.fee = fee;
+  entity.fee = getFee(entity.amountPaid!).fee;
   entity.state = "ACCEPTED";
   entity.save();
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
-  let id = event.params.invoiceKey.toHex();
+  let id = event.params.orderId.toString();
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -103,7 +98,7 @@ export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
 }
 
 export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
-  let id = event.params.invoiceKey.toHex();
+  let id = event.params.orderId.toString();
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -112,7 +107,7 @@ export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
 }
 
 export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
-  let id = event.params.invoiceKey.toHex();
+  let id = event.params.orderId.toString();
   let entity = Invoice.load(id);
   if (!entity) return;
 
@@ -121,7 +116,7 @@ export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
 }
 
 export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
-  let id = event.params.invoiceKey.toHex();
+  let id = event.params.orderId.toString();
   let entity = Invoice.load(id);
   if (!entity) return;
 

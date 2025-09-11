@@ -9,8 +9,8 @@ dataSources:
     network: sepolia
     source:
       abi: SimplePaymentProcessor
-      address: "0x0363820C54670800d71A0098c96B53Cf11193F6F"
-      startBlock: 8969949
+      address: "0xD3A54ba21CbB0678a0D1c90F4ad6a907a99EB7b5"
+      startBlock: 9132873
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -21,23 +21,24 @@ dataSources:
       abis:
         - name: SimplePaymentProcessor
           file: ./abis/SimplePaymentProcessor.json
+        - name: PaymentProcessorStorage
+          file: ./abis/PaymentProcessorStorage.json
       eventHandlers:
-        - event: InvoiceAccepted(indexed bytes32)
+        - event: InvoiceAccepted(indexed uint216)
           handler: handleInvoiceAccepted
-        - event: InvoiceCanceled(indexed bytes32)
+        - event: InvoiceCanceled(indexed uint216)
           handler: handleInvoiceCanceled
-        - event: InvoiceCreated(indexed
-            bytes32,(uint256,address,address,address,uint256,uint256,uint32,uint32,uint32,uint32))
+        - event: InvoiceCreated(indexed uint216,(uint216,uint40,uint40,uint40,uint8,address,address,address,uint256,uint256))
           handler: handleInvoiceCreated
-        - event: InvoicePaid(indexed bytes32,indexed address,indexed uint256)
+        - event: InvoicePaid(indexed uint216,indexed address,indexed uint256)
           handler: handleInvoicePaid
-        - event: InvoiceRefunded(indexed bytes32)
+        - event: InvoiceRefunded(indexed uint216)
           handler: handleInvoiceRefunded
-        - event: InvoiceRejected(indexed bytes32)
+        - event: InvoiceRejected(indexed uint216)
           handler: handleInvoiceRejected
-        - event: InvoiceReleased(indexed bytes32)
+        - event: InvoiceReleased(indexed uint216)
           handler: handleInvoiceReleased
-        - event: UpdateHoldPeriod(indexed bytes32,indexed uint256)
+        - event: UpdateHoldPeriod(indexed uint216,indexed uint256)
           handler: handleHoldPeriod
       file: ./src/invoice.ts
   - kind: ethereum
@@ -45,8 +46,8 @@ dataSources:
     network: sepolia
     source:
       abi: AdvancedPaymentProcessor
-      address: "0x8f73c398ECcd94874752c1dFa48F20A092C8Cf86"
-      startBlock: 8969949
+      address: "0x90F3F9816a637A8f30576Deecd6B09D825EB94C2"
+      startBlock: 9132873
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -62,27 +63,31 @@ dataSources:
           file: ./abis/AdvancedPaymentProcessor.json
         - name: ERC20
           file: ./abis/ERC20.json
+        - name: PaymentProcessorStorage
+          file: ./abis/PaymentProcessorStorage.json
       eventHandlers:
-        - event: InvoiceCreated(indexed bytes32,(uint256,address,address,address,address,uint8,uint48,uint48,uint256,uint256,uint256,bytes32))
+        - event: InvoiceCreated(indexed uint216,(uint216,uint40,uint40,uint40,uint8,uint216,address,address,address,address,uint256,uint256,uint256))
           handler: handleSmartInvoiceCreated
-        - event: InvoicePaid(indexed bytes32,address,address,uint256)
+        - event: InvoicePaid(indexed uint216,address,address,uint256)
           handler: handleInvoicePaid
-        - event: InvoiceCanceled(indexed bytes32)
+        - event: InvoiceCanceled(indexed uint216)
           handler: handleInvoiceCanceled
-        - event: DisputeCreated(indexed bytes32)
+        - event: DisputeCreated(indexed uint216)
           handler: handleDisputeCreated
-        - event: DisputeDismissed(indexed bytes32)
+        - event: DisputeDismissed(indexed uint216)
           handler: handleDisputeDismissed
-        - event: DisputeResolved(indexed bytes32)
+        - event: DisputeResolved(indexed uint216)
           handler: handleDisputeResolved
-        - event: DisputeSettled(indexed bytes32,uint256,uint256)
+        - event: DisputeSettled(indexed uint216,uint256,uint256)
           handler: handleDisputeSettled
-        - event: MetaInvoiceCreated(indexed bytes32,indexed uint256)
+        - event: MetaInvoiceCreated(indexed uint216,indexed uint256)
           handler: handleMetaInvoiceCreated
-        - event: PaymentReleased(indexed bytes32,uint256,uint256)
+        - event: PaymentReleased(indexed uint216,uint256)
           handler: handlePaymentReleased
-        - event: Refunded(indexed bytes32,indexed uint256)
+        - event: Refunded(indexed uint216,indexed uint256)
           handler: handleRefunded
+        - event: UpdateReleaseTime(indexed uint216,uint256)
+          handler: handleUpdateReleaseTime
       callHandlers:
         - function: setPriceFeed(address,address)
           handler: handleAllowedTokens

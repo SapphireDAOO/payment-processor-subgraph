@@ -1,12 +1,12 @@
 {
   "sepolia": {
     "SimplePaymentProcessor": {
-      "address": "0x0363820C54670800d71A0098c96B53Cf11193F6F",
-      "startBlock": 8969949
+      "address": "0xD3A54ba21CbB0678a0D1c90F4ad6a907a99EB7b5",
+      "startBlock": 9132873
     },
     "AdvancedPaymentProcessor": {
-      "address": "0x8f73c398ECcd94874752c1dFa48F20A092C8Cf86",
-      "startBlock": 8969949
+      "address": "0x90F3F9816a637A8f30576Deecd6B09D825EB94C2",
+      "startBlock": 9132873
     }
   },
   "polygon-amoy": {

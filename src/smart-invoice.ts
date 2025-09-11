@@ -11,6 +11,7 @@ import {
   InvoiceCanceled as InvoiceCanceledEvent,
   SetPriceFeedCall,
   Refunded as RefundedEvent,
+  UpdateReleaseTime as UpdateReleaseTimeEvent,
 } from "../generated/AdvancedPaymentProcessor/AdvancedPaymentProcessor";
 
 import {
@@ -22,10 +23,11 @@ import {
   AdminAction,
 } from "../generated/schema";
 import { getTokenData } from "./util/token";
+import { getDefaultHoldPeriod, getFee } from "./util/storage";
 
 export function handleSmartInvoiceCreated(event: InvoiceCreatedEvent): void {
   const invoiceId = event.params.invoice.invoiceId.toString();
-  let id = event.params.orderId.toHex();
+  let id = event.params.orderId.toString();
 
   let invoice = new SmartInvoice(id);
 
@@ -55,8 +57,7 @@ export function handleSmartInvoiceCreated(event: InvoiceCreatedEvent): void {
   invoice.state = "CREATED";
   invoice.price = event.params.invoice.price;
   invoice.contract = event.address;
-  invoice.orderId = event.params.invoice.invoiceId.toHex();
-  invoice.invoiceId = id;
+  invoice.invoiceId = invoiceId;
   invoice.creationTxHash = event.transaction.hash.toHex();
 
   invoiceType.save();
@@ -89,8 +90,9 @@ export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
 }
 
 export function handleInvoicePaid(event: InvoicePaidV2Event): void {
-  let id = event.params.orderId.toHex();
+  let id = event.params.orderId.toString();
   let invoice = SmartInvoice.load(id);
+  const amountPaid = event.params.amount;
   const buyerId = event.transaction.from.toHex();
   if (!invoice) return;
 
@@ -102,12 +104,18 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
 
   invoice.paidAt = event.block.timestamp;
   invoice.buyer = buyerId;
-  invoice.amountPaid = event.params.amount;
-  invoice.balance = event.params.amount;
+  invoice.amountPaid = amountPaid;
+  invoice.balance = amountPaid;
   invoice.paymentToken = event.params.paymentToken.toHex();
   invoice.state = "PAID";
   invoice.escrow = event.params.escrowAddress;
-  invoice.paymentTxHash = event.block.hash;
+  invoice.paymentTxHash = event.transaction.hash;
+  invoice.releasedAt = event.block.timestamp.plus(
+    getDefaultHoldPeriod().defaultHoldPeriod
+  );
+
+  invoice.fee = getFee(amountPaid).fee;
+
   invoice.save();
 
   let adminActionsEntity = AdminAction.load(id);
@@ -119,7 +127,7 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
-  let id = event.params.orderId.toHex();
+  let id = event.params.orderId.toString();
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
 
@@ -135,7 +143,7 @@ export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
 }
 
 export function handleDisputeCreated(event: DisputeCreatedEvent): void {
-  let id = event.params.orderId.toHex();
+  let id = event.params.orderId.toString();
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = "DISPUTED";
@@ -150,7 +158,7 @@ export function handleDisputeCreated(event: DisputeCreatedEvent): void {
 }
 
 export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
-  let id = event.params.orderId.toHex();
+  let id = event.params.orderId.toString();
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = "DISPUTE DISMISSED";
@@ -167,7 +175,7 @@ export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
 }
 
 export function handleDisputeResolved(event: DisputeResolvedEvent): void {
-  let id = event.params.orderId.toHex();
+  let id = event.params.orderId.toString();
   let invoice = SmartInvoice.load(id);
 
   const state = "DISPUTE RESOLVED";
@@ -184,13 +192,14 @@ export function handleDisputeResolved(event: DisputeResolvedEvent): void {
 }
 
 export function handleDisputeSettled(event: DisputeSettledEvent): void {
-  let id = event.params.orderId.toHex();
+  let id = event.params.orderId.toString();
   let invoice = SmartInvoice.load(id);
 
   const state = "DISPUTE SETTLED";
 
   if (!invoice) return;
   invoice.state = state;
+  invoice.commisionTxHash = event.transaction.hash;
 
   let adminActionsEntity = AdminAction.load(id);
   if (!adminActionsEntity) return;
@@ -201,7 +210,7 @@ export function handleDisputeSettled(event: DisputeSettledEvent): void {
 }
 
 export function handleRefunded(event: RefundedEvent): void {
-  let id = event.params.orderId.toHex();
+  let id = event.params.orderId.toString();
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
 
@@ -225,12 +234,13 @@ export function handleRefunded(event: RefundedEvent): void {
 }
 
 export function handlePaymentReleased(event: PaymentReleasedEvent): void {
-  let id = event.params.orderId.toHex();
+  let id = event.params.orderId.toString();
   let invoice = SmartInvoice.load(id);
   if (!invoice) return;
   invoice.state = "RELEASED";
   invoice.releasedAt = event.block.timestamp;
   invoice.releaseHash = event.transaction.hash;
+  invoice.commisionTxHash = event.transaction.hash;
   invoice.balance = new BigInt(0);
 
   let adminActionsEntity = AdminAction.load(id);
@@ -239,6 +249,17 @@ export function handlePaymentReleased(event: PaymentReleasedEvent): void {
   adminActionsEntity.balance = new BigInt(0);
 
   adminActionsEntity.save();
+  invoice.save();
+}
+
+export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
+  let id = event.params.orderId.toString();
+
+  let invoice = SmartInvoice.load(id);
+  if (!invoice) return;
+
+  invoice.releasedAt = event.block.timestamp.plus(event.params.newHoldPeriod);
+
   invoice.save();
 }
 
@@ -254,3 +275,5 @@ export function handleAllowedTokens(call: SetPriceFeedCall): void {
 
   token.save();
 }
+
+// function getGasUsed(): BigInt {}
