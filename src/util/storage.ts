@@ -8,7 +8,7 @@ class Storage {
   ) {}
 }
 
-const STORAGE_ADDRESS = "0x69238Fa1747f9a90D4D07D7F4712e2819a8308D9";
+const STORAGE_ADDRESS = "0x42833d30D3028A0D1f0E26531fdA1a7C762ba14D";
 
 export function getDefaultHoldPeriod(): Storage {
   let ppStorage = PaymentProcessorStorage.bind(

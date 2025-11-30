@@ -9,12 +9,18 @@ type Invoice @entity(immutable: false) {
   price: BigInt
   amountPaid: BigInt
   releasedAt: BigInt
+  invalidateAt: BigInt
+  expiresAt: BigInt
   releaseHash: Bytes
   paymentTxHash: Bytes
   fee: BigInt
   contract: Bytes
   creationTxHash: String
   commisionTxHash: Bytes
+  refundTxHash: Bytes
+  history: [String!]!
+  historyTime: [String!]!
+  lastActionTime: BigInt
 }
 
 type SmartInvoice @entity(immutable: false) {
@@ -35,8 +41,10 @@ type SmartInvoice @entity(immutable: false) {
   contract: Bytes!
   invoiceId: String
   creationTxHash: String
+  refundTxHash: Bytes
   commisionTxHash: Bytes
   fee: BigInt
+  lastActionTime: BigInt
 }
 
 type MetaInvoice @entity(immutable: false) {

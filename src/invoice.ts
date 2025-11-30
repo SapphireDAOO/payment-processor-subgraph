@@ -1,4 +1,4 @@
-import { Address } from "@graphprotocol/graph-ts";
+import { BigInt } from "@graphprotocol/graph-ts";
 import {
   InvoiceAccepted as InvoiceAcceptedEvent,
   InvoiceCanceled as InvoiceCanceledEvent,
@@ -7,120 +7,174 @@ import {
   InvoiceRefunded as InvoiceRefundedEvent,
   InvoiceRejected as InvoiceRejectedEvent,
   InvoiceReleased as InvoiceReleasedEvent,
-  SimplePaymentProcessor,
   UpdateHoldPeriod as UpdateHoldPeriodEvent,
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
 import { Invoice, Type, User } from "../generated/schema";
-import { SIMPLE_PAYMENT_PROCESSOR_CONTRACT_ADDRESS } from "./util/constant";
 import { getDefaultHoldPeriod, getFee } from "./util/storage";
 
-export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
-  let id = event.params.orderId.toString();
-  let entity = new Invoice(id);
+const CREATED = "CREATED";
+const PAID = "PAID";
+const ACCEPTED = "ACCEPTED";
+const CANCELED = "CANCELED";
+const RELEASED = "RELEASED";
+const REJECTED = "REJECTED";
+const REFUNDED = "REFUNDED";
 
-  let invoiceType = new Type(id);
+function getOrCreateUser(id: string): User {
+  let user = User.load(id);
+  if (user) return user;
+
+  user = new User(id);
+  user.save();
+
+  return user;
+}
+
+function addHistory(entity: Invoice, status: string, timestamp: BigInt): void {
+  const historyValue = entity.get("history");
+  const history = historyValue
+    ? historyValue.toStringArray()
+    : new Array<string>();
+  history.push(status);
+  entity.history = history;
+
+  const historyTimeValue = entity.get("historyTime");
+  const historyTime = historyTimeValue
+    ? historyTimeValue.toStringArray()
+    : new Array<string>();
+  historyTime.push(timestamp.toString());
+  entity.historyTime = historyTime;
+}
+
+export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
+  const id = event.params.orderId.toString();
+  const invoice = new Invoice(id);
+
+  const invoiceType = new Type(id);
   invoiceType.type = "invoice";
 
-  let sellerId = event.params.invoice.seller.toHex();
-  let seller = User.load(sellerId);
-  if (!seller) {
-    seller = new User(sellerId);
-    seller.save();
-  }
+  const sellerId = event.params.invoice.seller.toHex();
+  getOrCreateUser(sellerId);
 
-  entity.invoiceId = event.params.invoice.invoiceId.toString();
-  entity.seller = sellerId;
-  entity.state = "CREATED";
-  entity.createdAt = event.block.timestamp;
-  entity.price = event.params.invoice.price;
-  entity.contract = event.address;
-  entity.creationTxHash = event.transaction.hash.toHex();
+  invoice.invoiceId = event.params.invoice.invoiceId.toString();
+  invoice.seller = sellerId;
+  invoice.state = CREATED;
+  invoice.createdAt = event.block.timestamp;
+  invoice.price = event.params.invoice.price;
+  invoice.contract = event.address;
+  invoice.creationTxHash = event.transaction.hash.toHex();
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.invalidateAt = event.params.invalidateAt;
+  addHistory(invoice, CREATED, event.block.timestamp);
 
   invoiceType.save();
-  entity.save();
+  invoice.save();
 }
 
 export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
-  let id = event.params.orderId.toString();
-  let entity = Invoice.load(id);
-  if (!entity) return;
+  const id = event.params.orderId.toString();
+  const invoice = Invoice.load(id);
+  if (!invoice) return;
 
-  entity.releasedAt = event.params.releaseDueTimestamp;
-  entity.save();
+  invoice.releasedAt = event.params.releaseDueTimestamp;
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.save();
 }
 
 export function handleInvoicePaid(event: InvoicePaidEvent): void {
-  let id = event.params.orderId.toString();
-  let entity = Invoice.load(id);
-  if (!entity) return;
+  const id = event.params.orderId.toString();
+  const invoice = Invoice.load(id);
+  if (!invoice) return;
 
-  let buyerId = event.params.buyer.toHex();
-  let buyer = User.load(buyerId);
-  if (!buyer) {
-    buyer = new User(buyerId);
-    buyer.save();
-  }
+  const buyerId = event.params.buyer.toHex();
+  getOrCreateUser(buyerId);
 
-  entity.buyer = buyerId;
-  entity.paidAt = event.block.timestamp;
-  entity.state = "PAID";
-  entity.amountPaid = event.params.amountPaid;
-  entity.paymentTxHash = event.transaction.hash;
+  invoice.buyer = buyerId;
+  invoice.paidAt = event.block.timestamp;
+  invoice.state = PAID;
+  invoice.amountPaid = event.params.amountPaid;
+  invoice.paymentTxHash = event.transaction.hash;
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.expiresAt = event.params.expiresAt;
 
-  entity.save();
+  addHistory(invoice, PAID, event.block.timestamp);
+
+  invoice.save();
 }
 
 export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
-  let id = event.params.orderId.toString();
-  let entity = Invoice.load(id);
-  if (!entity) return;
+  const id = event.params.orderId.toString();
+  const invoice = Invoice.load(id);
+  if (!invoice) return;
 
-  entity.commisionTxHash = event.transaction.hash;
+  invoice.commisionTxHash = event.transaction.hash;
 
-  if (!entity.releasedAt) {
-    entity.releasedAt = event.block.timestamp.plus(
+  if (!invoice.releasedAt) {
+    invoice.releasedAt = event.block.timestamp.plus(
       getDefaultHoldPeriod().defaultHoldPeriod
     );
   }
 
-  entity.fee = getFee(entity.amountPaid!).fee;
-  entity.state = "ACCEPTED";
-  entity.save();
+  invoice.fee = getFee(invoice.amountPaid!).fee;
+  invoice.state = ACCEPTED;
+  invoice.lastActionTime = event.block.timestamp;
+
+  addHistory(invoice, ACCEPTED, event.block.timestamp);
+
+  invoice.save();
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
-  let id = event.params.orderId.toString();
-  let entity = Invoice.load(id);
-  if (!entity) return;
+  const id = event.params.orderId.toString();
+  const invoice = Invoice.load(id);
+  if (!invoice) return;
 
-  entity.state = "CANCELED";
-  entity.save();
+  invoice.state = CANCELED;
+  invoice.lastActionTime = event.block.timestamp;
+
+  addHistory(invoice, CANCELED, event.block.timestamp);
+
+  invoice.save();
 }
 
 export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
-  let id = event.params.orderId.toString();
-  let entity = Invoice.load(id);
-  if (!entity) return;
+  const id = event.params.orderId.toString();
+  const invoice = Invoice.load(id);
+  if (!invoice) return;
 
-  entity.state = "REFUNDED";
-  entity.save();
+  invoice.state = REFUNDED;
+  invoice.refundTxHash = event.transaction.hash;
+  invoice.lastActionTime = event.block.timestamp;
+
+  addHistory(invoice, REFUNDED, event.block.timestamp);
+
+  invoice.save();
 }
 
 export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
-  let id = event.params.orderId.toString();
-  let entity = Invoice.load(id);
-  if (!entity) return;
+  const id = event.params.orderId.toString();
+  const invoice = Invoice.load(id);
+  if (!invoice) return;
 
-  entity.state = "REJECTED";
-  entity.save();
+  invoice.state = REJECTED;
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.refundTxHash = event.transaction.hash;
+
+  addHistory(invoice, REJECTED, event.block.timestamp);
+
+  invoice.save();
 }
 
 export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
-  let id = event.params.orderId.toString();
-  let entity = Invoice.load(id);
-  if (!entity) return;
+  const id = event.params.orderId.toString();
+  const invoice = Invoice.load(id);
+  if (!invoice) return;
 
-  entity.state = "RELEASED";
-  entity.releaseHash = event.transaction.hash;
-  entity.save();
+  invoice.state = RELEASED;
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.releaseHash = event.transaction.hash;
+
+  addHistory(invoice, RELEASED, event.block.timestamp);
+
+  invoice.save();
 }

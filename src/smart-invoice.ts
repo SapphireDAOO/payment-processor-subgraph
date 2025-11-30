@@ -1,55 +1,65 @@
 import { BigInt } from "@graphprotocol/graph-ts";
 import {
-  InvoiceCreated as InvoiceCreatedEvent,
-  MetaInvoiceCreated as MetaInvoiceCreatedEvent,
   DisputeCreated as DisputeCreatedEvent,
   DisputeDismissed as DisputeDismissedEvent,
   DisputeResolved as DisputeResolvedEvent,
   DisputeSettled as DisputeSettledEvent,
-  PaymentReleased as PaymentReleasedEvent,
-  InvoicePaid as InvoicePaidV2Event,
   InvoiceCanceled as InvoiceCanceledEvent,
-  SetPriceFeedCall,
+  InvoiceCreated as InvoiceCreatedEvent,
+  InvoicePaid as InvoicePaidV2Event,
+  MetaInvoiceCreated as MetaInvoiceCreatedEvent,
+  PaymentReleased as PaymentReleasedEvent,
   Refunded as RefundedEvent,
+  SetPriceFeedCall,
   UpdateReleaseTime as UpdateReleaseTimeEvent,
 } from "../generated/AdvancedPaymentProcessor/AdvancedPaymentProcessor";
-
 import {
-  SmartInvoice,
-  MetaInvoice,
-  User,
-  PaymentToken,
-  Type,
   AdminAction,
+  MetaInvoice,
+  PaymentToken,
+  SmartInvoice,
+  Type,
+  User,
 } from "../generated/schema";
 import { getTokenData } from "./util/token";
 import { getDefaultHoldPeriod, getFee } from "./util/storage";
 
+const ZERO = BigInt.fromI32(0);
+
+function getOrCreateUser(id: string): User {
+  let user = User.load(id);
+  if (user) return user;
+
+  user = new User(id);
+  user.save();
+
+  return user;
+}
+
+function loadAdminAction(id: string): AdminAction | null {
+  return AdminAction.load(id);
+}
+
 export function handleSmartInvoiceCreated(event: InvoiceCreatedEvent): void {
   const invoiceId = event.params.invoice.invoiceId.toString();
-  let id = event.params.orderId.toString();
+  const id = event.params.orderId.toString();
 
-  let invoice = new SmartInvoice(id);
+  const invoice = new SmartInvoice(id);
+  const adminAction = new AdminAction(id);
+  const invoiceType = new Type(id);
 
-  let adminActionsEntity = new AdminAction(id);
+  const buyerId = event.params.invoice.buyer.toHex();
+  const sellerId = event.params.invoice.seller.toHex();
 
-  adminActionsEntity.action = "CREATED";
-  adminActionsEntity.time = event.block.timestamp;
-  adminActionsEntity.invoiceId = invoiceId;
-  adminActionsEntity.type = "INVOICE";
-  adminActionsEntity.txHash = event.transaction.hash.toHex();
+  getOrCreateUser(sellerId);
 
-  let invoiceType = new Type(id);
+  adminAction.action = "CREATED";
+  adminAction.time = event.block.timestamp;
+  adminAction.invoiceId = invoiceId;
+  adminAction.type = "INVOICE";
+  adminAction.txHash = event.transaction.hash.toHex();
+
   invoiceType.type = "smart-invoice";
-
-  let buyerId = event.params.invoice.buyer.toHex();
-  let sellerId = event.params.invoice.seller.toHex();
-
-  let seller = User.load(sellerId);
-  if (!seller) {
-    seller = new User(sellerId);
-    seller.save();
-  }
 
   invoice.buyer = buyerId;
   invoice.seller = sellerId;
@@ -59,48 +69,45 @@ export function handleSmartInvoiceCreated(event: InvoiceCreatedEvent): void {
   invoice.contract = event.address;
   invoice.invoiceId = invoiceId;
   invoice.creationTxHash = event.transaction.hash.toHex();
+  invoice.lastActionTime = event.block.timestamp;
 
   invoiceType.save();
-  adminActionsEntity.save();
+  adminAction.save();
   invoice.save();
 }
 
 export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
-  let id = event.params.metaInvoiceId.toHex();
-  let meta = new MetaInvoice(id);
+  const id = event.params.metaInvoiceId.toHex();
+  const metaInvoice = new MetaInvoice(id);
+  const invoiceType = new Type(id);
+  const adminAction = new AdminAction(id);
 
-  let invoiceType = new Type(id);
   invoiceType.type = "meta-invoice";
 
-  let adminActionsEntity = new AdminAction(id);
+  adminAction.action = "CREATED";
+  adminAction.time = event.block.timestamp;
+  adminAction.invoiceId = id;
+  adminAction.type = "META INVOICE";
+  adminAction.txHash = event.transaction.hash.toHex();
 
-  adminActionsEntity.action = "CREATED";
-  adminActionsEntity.time = event.block.timestamp;
-  adminActionsEntity.invoiceId = id;
-  adminActionsEntity.type = "META INVOICE";
-  adminActionsEntity.txHash = event.transaction.hash.toHex();
+  metaInvoice.invoiceId = id;
+  metaInvoice.price = event.params.totalPrice;
+  metaInvoice.contract = event.address;
 
-  meta.invoiceId = id;
-  meta.price = event.params.totalPrice;
-  meta.contract = event.address;
-  meta.save();
-
+  metaInvoice.save();
   invoiceType.save();
-  adminActionsEntity.save();
+  adminAction.save();
 }
 
 export function handleInvoicePaid(event: InvoicePaidV2Event): void {
-  let id = event.params.orderId.toString();
-  let invoice = SmartInvoice.load(id);
-  const amountPaid = event.params.amount;
-  const buyerId = event.transaction.from.toHex();
+  const id = event.params.orderId.toString();
+  const invoice = SmartInvoice.load(id);
   if (!invoice) return;
 
-  let buyer = User.load(buyerId);
-  if (!buyer) {
-    buyer = new User(buyerId);
-    buyer.save();
-  }
+  const amountPaid = event.params.amount;
+  const buyerId = event.transaction.from.toHex();
+
+  getOrCreateUser(buyerId);
 
   invoice.paidAt = event.block.timestamp;
   invoice.buyer = buyerId;
@@ -113,167 +120,176 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   invoice.releasedAt = event.block.timestamp.plus(
     getDefaultHoldPeriod().defaultHoldPeriod
   );
-
   invoice.fee = getFee(amountPaid).fee;
+  invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
 
-  let adminActionsEntity = AdminAction.load(id);
-  if (!adminActionsEntity) return;
-  adminActionsEntity.balance = invoice.amountPaid;
-  adminActionsEntity.currency = invoice.paymentToken;
-
-  adminActionsEntity.save();
+  const adminAction = loadAdminAction(id);
+  if (adminAction) {
+    adminAction.balance = invoice.amountPaid;
+    adminAction.currency = invoice.paymentToken;
+    adminAction.save();
+  }
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
-  let id = event.params.orderId.toString();
-  let invoice = SmartInvoice.load(id);
+  const id = event.params.orderId.toString();
+  const invoice = SmartInvoice.load(id);
   if (!invoice) return;
 
   invoice.state = "CANCELED";
+  invoice.lastActionTime = event.block.timestamp;
 
-  let adminActionsEntity = AdminAction.load(id);
-  if (!adminActionsEntity) return;
-  adminActionsEntity.action = "CANCELED";
-  adminActionsEntity.txHash = event.transaction.hash.toHex();
+  const adminAction = loadAdminAction(id);
+  if (adminAction) {
+    adminAction.action = "CANCELED";
+    adminAction.txHash = event.transaction.hash.toHex();
+    adminAction.save();
+  }
 
   invoice.save();
-  adminActionsEntity.save();
 }
 
 export function handleDisputeCreated(event: DisputeCreatedEvent): void {
-  let id = event.params.orderId.toString();
-  let invoice = SmartInvoice.load(id);
+  const id = event.params.orderId.toString();
+  const invoice = SmartInvoice.load(id);
   if (!invoice) return;
-  invoice.state = "DISPUTED";
 
-  let adminActionsEntity = AdminAction.load(id);
-  if (!adminActionsEntity) return;
-  adminActionsEntity.action = "DISPUTED";
-  adminActionsEntity.txHash = event.transaction.hash.toHex();
+  invoice.state = "DISPUTED";
+  invoice.lastActionTime = event.block.timestamp;
+
+  const adminAction = loadAdminAction(id);
+  if (adminAction) {
+    adminAction.action = "DISPUTED";
+    adminAction.txHash = event.transaction.hash.toHex();
+    adminAction.save();
+  }
 
   invoice.save();
-  adminActionsEntity.save();
 }
 
 export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
-  let id = event.params.orderId.toString();
-  let invoice = SmartInvoice.load(id);
+  const id = event.params.orderId.toString();
+  const invoice = SmartInvoice.load(id);
   if (!invoice) return;
+
   invoice.state = "DISPUTE DISMISSED";
+  invoice.lastActionTime = event.block.timestamp;
 
-  let adminActionsEntity = AdminAction.load(id);
-  if (!adminActionsEntity) return;
-
-  adminActionsEntity.action = "DISPUTE DISMISSED";
-  adminActionsEntity.txHash = event.transaction.hash.toHex();
-
-  adminActionsEntity.save();
+  const adminAction = loadAdminAction(id);
+  if (adminAction) {
+    adminAction.action = "DISPUTE DISMISSED";
+    adminAction.txHash = event.transaction.hash.toHex();
+    adminAction.save();
+  }
 
   invoice.save();
 }
 
 export function handleDisputeResolved(event: DisputeResolvedEvent): void {
-  let id = event.params.orderId.toString();
-  let invoice = SmartInvoice.load(id);
+  const id = event.params.orderId.toString();
+  const invoice = SmartInvoice.load(id);
+  if (!invoice) return;
 
   const state = "DISPUTE RESOLVED";
 
-  if (!invoice) return;
   invoice.state = state;
+  invoice.lastActionTime = event.block.timestamp;
 
-  let adminActionsEntity = AdminAction.load(id);
-  if (!adminActionsEntity) return;
-  adminActionsEntity.action = state;
+  const adminAction = loadAdminAction(id);
+  if (adminAction) {
+    adminAction.action = state;
+    adminAction.save();
+  }
 
   invoice.save();
-  adminActionsEntity.save();
 }
 
 export function handleDisputeSettled(event: DisputeSettledEvent): void {
-  let id = event.params.orderId.toString();
-  let invoice = SmartInvoice.load(id);
+  const id = event.params.orderId.toString();
+  const invoice = SmartInvoice.load(id);
+  if (!invoice) return;
 
   const state = "DISPUTE SETTLED";
 
-  if (!invoice) return;
   invoice.state = state;
   invoice.commisionTxHash = event.transaction.hash;
+  invoice.lastActionTime = event.block.timestamp;
 
-  let adminActionsEntity = AdminAction.load(id);
-  if (!adminActionsEntity) return;
-  adminActionsEntity.action = state;
+  const adminAction = loadAdminAction(id);
+  if (adminAction) {
+    adminAction.action = state;
+    adminAction.save();
+  }
 
-  adminActionsEntity.save();
   invoice.save();
 }
 
 export function handleRefunded(event: RefundedEvent): void {
-  let id = event.params.orderId.toString();
-  let invoice = SmartInvoice.load(id);
+  const id = event.params.orderId.toString();
+  const invoice = SmartInvoice.load(id);
   if (!invoice) return;
 
   if (invoice.balance) {
     invoice.balance = invoice.balance!.minus(event.params.amount);
   }
 
-  let adminActionsEntity = AdminAction.load(id);
-  if (!adminActionsEntity) return;
+  const balance = invoice.balance ? invoice.balance! : ZERO;
 
-  if (invoice.balance!.equals(new BigInt(0))) {
-    adminActionsEntity.action = "REFUNDED";
-  } else {
-    adminActionsEntity.action = "PARTIAL REFUND";
+  const adminAction = loadAdminAction(id);
+  if (adminAction) {
+    adminAction.action = balance.equals(ZERO) ? "REFUNDED" : "PARTIAL REFUND";
+    adminAction.balance = invoice.balance;
+    adminAction.save();
   }
 
-  adminActionsEntity.balance = invoice.balance;
+  invoice.refundTxHash = event.transaction.hash;
+  invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
-  adminActionsEntity.save();
 }
 
 export function handlePaymentReleased(event: PaymentReleasedEvent): void {
-  let id = event.params.orderId.toString();
-  let invoice = SmartInvoice.load(id);
+  const id = event.params.orderId.toString();
+  const invoice = SmartInvoice.load(id);
   if (!invoice) return;
+
   invoice.state = "RELEASED";
   invoice.releasedAt = event.block.timestamp;
   invoice.releaseHash = event.transaction.hash;
   invoice.commisionTxHash = event.transaction.hash;
-  invoice.balance = new BigInt(0);
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.balance = ZERO;
 
-  let adminActionsEntity = AdminAction.load(id);
-  if (!adminActionsEntity) return;
-  adminActionsEntity.action = "RELEASED";
-  adminActionsEntity.balance = new BigInt(0);
+  const adminAction = loadAdminAction(id);
+  if (adminAction) {
+    adminAction.action = "RELEASED";
+    adminAction.balance = ZERO;
+    adminAction.save();
+  }
 
-  adminActionsEntity.save();
   invoice.save();
 }
 
 export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
-  let id = event.params.orderId.toString();
-
-  let invoice = SmartInvoice.load(id);
+  const id = event.params.orderId.toString();
+  const invoice = SmartInvoice.load(id);
   if (!invoice) return;
 
+  invoice.lastActionTime = event.block.timestamp;
   invoice.releasedAt = event.block.timestamp.plus(event.params.newHoldPeriod);
 
   invoice.save();
 }
 
 export function handleAllowedTokens(call: SetPriceFeedCall): void {
-  let id = call.inputs.token;
-
-  let tokenData = getTokenData(id);
-
-  let token = new PaymentToken(id.toHex());
+  const id = call.inputs.token;
+  const tokenData = getTokenData(id);
+  const token = new PaymentToken(id.toHex());
 
   token.decimal = tokenData.decimal;
   token.name = tokenData.name;
 
   token.save();
 }
-
-// function getGasUsed(): BigInt {}

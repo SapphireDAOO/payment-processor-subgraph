@@ -1,13 +1,13 @@
 {
-  "name": "payment-processor",
+  "name": "payment-processor-indexer",
   "license": "UNLICENSED",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ payment-processor",
-    "create-local": "graph create --node http://localhost:8020/ payment-processor",
-    "remove-local": "graph remove --node http://localhost:8020/ payment-processor",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 payment-processor",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ payment-processor-indexer",
+    "create-local": "graph create --node http://localhost:8020/ payment-processor-indexer",
+    "remove-local": "graph remove --node http://localhost:8020/ payment-processor-indexer",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 payment-processor-indexer",
     "test": "graph test"
   },
   "dependencies": {
