@@ -21,7 +21,11 @@ type Invoice @entity(immutable: false) {
   history: [String!]!
   historyTime: [String!]!
   lastActionTime: BigInt
+  buyerNote: String
+  sellerNote: String
 }
+
+# to-do: add release amount
 
 type SmartInvoice @entity(immutable: false) {
   id: ID!
@@ -75,6 +79,7 @@ type AdminAction @entity(immutable: false) {
   currency: PaymentToken
 }
 
+# to-do: add symbol
 type PaymentToken @entity(immutable: false) {
   id: ID!
   name: String
@@ -84,4 +89,25 @@ type PaymentToken @entity(immutable: false) {
 type Type @entity(immutable: false) {
   id: ID!
   type: String!
+}
+
+type Note @entity(immutable: false) {
+  id: ID!
+  orderId: BigInt!
+  noteId: BigInt!
+  author: Bytes!
+  share: Boolean!
+  encryptedContent: Bytes!
+  createdAtBlock: BigInt!
+  createdAtTx: Bytes!
+}
+
+type NoteOpenState @entity(immutable: false) {
+  id: ID!
+  orderId: BigInt!
+  noteId: BigInt!
+  user: Bytes!
+  opened: Boolean!
+  updatedAtBlock: BigInt!
+  updatedAtTx: Bytes!
 }

@@ -48,7 +48,11 @@ function addHistory(entity: Invoice, status: string, timestamp: BigInt): void {
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   const id = event.params.orderId.toString();
-  const invoice = new Invoice(id);
+  let invoice = Invoice.load(id);
+  if (!invoice) {
+    invoice = new Invoice(id);
+    addHistory(invoice, CREATED, event.block.timestamp);
+  }
 
   const invoiceType = new Type(id);
   invoiceType.type = "invoice";
@@ -65,7 +69,6 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   invoice.creationTxHash = event.transaction.hash.toHex();
   invoice.lastActionTime = event.block.timestamp;
   invoice.invalidateAt = event.params.invalidateAt;
-  addHistory(invoice, CREATED, event.block.timestamp);
 
   invoiceType.save();
   invoice.save();

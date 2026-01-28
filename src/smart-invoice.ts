@@ -77,7 +77,7 @@ export function handleSmartInvoiceCreated(event: InvoiceCreatedEvent): void {
 }
 
 export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
-  const id = event.params.metaInvoiceId.toHex();
+  const id = event.params.metaInvoiceId.toString();
   const metaInvoice = new MetaInvoice(id);
   const invoiceType = new Type(id);
   const adminAction = new AdminAction(id);

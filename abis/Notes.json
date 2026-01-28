@@ -1,0 +1,180 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "paymentProcessorStorageAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  { "inputs": [], "name": "ContentTooLarge", "type": "error" },
+  { "inputs": [], "name": "EmptyContent", "type": "error" },
+  { "inputs": [], "name": "NoteNotFound", "type": "error" },
+  { "inputs": [], "name": "Unauthorized", "type": "error" },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint216",
+        "name": "orderId",
+        "type": "uint216"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "noteId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "author",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "share",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "encryptedContent",
+        "type": "bytes"
+      }
+    ],
+    "name": "NoteCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint216",
+        "name": "orderId",
+        "type": "uint216"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "noteId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "opened",
+        "type": "bool"
+      }
+    ],
+    "name": "NoteStateChanged",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "ALLOWED",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "NOT_ALLOWED",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint216", "name": "orderId", "type": "uint216" },
+      { "internalType": "address", "name": "author", "type": "address" },
+      { "internalType": "bytes", "name": "encryptedContent", "type": "bytes" },
+      { "internalType": "bool", "name": "share", "type": "bool" }
+    ],
+    "name": "createNote",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint216", "name": "orderId", "type": "uint216" },
+      { "internalType": "uint256", "name": "noteId", "type": "uint256" }
+    ],
+    "name": "getNote",
+    "outputs": [
+      { "internalType": "address", "name": "", "type": "address" },
+      { "internalType": "bool", "name": "", "type": "bool" },
+      { "internalType": "bytes", "name": "", "type": "bytes" },
+      { "internalType": "bool", "name": "", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint216", "name": "orderId", "type": "uint216" }
+    ],
+    "name": "getNoteCount",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint216", "name": "orderId", "type": "uint216" },
+      { "internalType": "uint256", "name": "noteId", "type": "uint256" },
+      { "internalType": "address", "name": "user", "type": "address" }
+    ],
+    "name": "isOpened",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ppStorage",
+    "outputs": [
+      {
+        "internalType": "contract IPaymentProcessorStorage",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" },
+      { "internalType": "bool", "name": "enabled", "type": "bool" }
+    ],
+    "name": "setAuthorized",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint216", "name": "orderId", "type": "uint216" },
+      { "internalType": "uint256", "name": "noteId", "type": "uint256" },
+      { "internalType": "bool", "name": "open", "type": "bool" }
+    ],
+    "name": "setOpened",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
