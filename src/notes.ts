@@ -15,9 +15,9 @@ function noteOpenStateId(
 }
 
 export function handleNoteCreated(event: NoteCreated): void {
-  let id = noteEntityId(event.params.orderId, event.params.noteId);
+  const id = noteEntityId(event.params.orderId, event.params.noteId);
 
-  let note = new Note(id);
+  const note = new Note(id);
   note.orderId = event.params.orderId;
   note.noteId = event.params.noteId;
   note.author = event.params.author;
@@ -30,7 +30,7 @@ export function handleNoteCreated(event: NoteCreated): void {
 }
 
 export function handleNoteStateChanged(event: NoteStateChanged): void {
-  let id = noteOpenStateId(
+  const id = noteOpenStateId(
     event.params.orderId,
     event.params.noteId,
     event.params.user.toHexString()

@@ -1,45 +1,25 @@
 import { Address, BigInt } from "@graphprotocol/graph-ts";
 import { PaymentProcessorStorage } from "../../generated/AdvancedPaymentProcessor/PaymentProcessorStorage";
 
-class Storage {
-  constructor(
-    public defaultHoldPeriod: BigInt,
-    public fee: BigInt
-  ) {}
+const STORAGE_ADDRESS = "0xd4a9e5ac9f54beccd7c12ca6bd7bd026bbf0058d";
+
+function bindStorage(): PaymentProcessorStorage {
+  return PaymentProcessorStorage.bind(Address.fromString(STORAGE_ADDRESS));
 }
 
-const STORAGE_ADDRESS = "0xeb57F1F77F873d8481510c1f5Ee44dE340Dc93fe";
-
-export function getDefaultHoldPeriod(): Storage {
-  let ppStorage = PaymentProcessorStorage.bind(
-    Address.fromString(STORAGE_ADDRESS)
-  );
-
-  let result = ppStorage.try_getDefaultHoldPeriod();
-  if (result.reverted) {
-    return new Storage(BigInt.zero(), BigInt.zero());
-  }
-
-  return new Storage(result.value, BigInt.zero());
+export function getDefaultHoldPeriod(): BigInt {
+  const result = bindStorage().try_getDefaultHoldPeriod();
+  return result.reverted ? BigInt.zero() : result.value;
 }
 
-export function getFee(amount: BigInt): Storage {
-  let ppStorage = PaymentProcessorStorage.bind(
-    Address.fromString(STORAGE_ADDRESS)
-  );
-
-  let result = ppStorage.try_getFeeRate();
-  if (result.reverted) {
-    return new Storage(BigInt.zero(), BigInt.zero());
-  }
+export function getFee(amount: BigInt): BigInt {
+  const result = bindStorage().try_getFeeRate();
+  if (result.reverted) return BigInt.zero();
 
   const feeRate = result.value;
+  const denominator = BigInt.fromI32(10_000);
 
-  let denominator = BigInt.fromI32(10_000);
-
-  let fee = denominator.notEqual(BigInt.zero())
+  return denominator.notEqual(BigInt.zero())
     ? amount.times(feeRate).div(denominator)
     : BigInt.zero();
-
-  return new Storage(BigInt.zero(), fee);
 }

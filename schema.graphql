@@ -1,4 +1,4 @@
-type Invoice @entity(immutable: false) {
+type SimplePaymentProcessor @entity(immutable: false) {
   id: ID!
   invoiceId: String
   state: String
@@ -16,7 +16,7 @@ type Invoice @entity(immutable: false) {
   fee: BigInt
   contract: Bytes
   creationTxHash: String
-  commisionTxHash: Bytes
+  commissionTxHash: Bytes
   refundTxHash: Bytes
   history: [String!]!
   historyTime: [String!]!
@@ -25,9 +25,7 @@ type Invoice @entity(immutable: false) {
   sellerNote: String
 }
 
-# to-do: add release amount
-
-type SmartInvoice @entity(immutable: false) {
+type AdvancedPaymentProcessor @entity(immutable: false) {
   id: ID!
   buyer: User
   seller: User
@@ -46,9 +44,13 @@ type SmartInvoice @entity(immutable: false) {
   invoiceId: String
   creationTxHash: String
   refundTxHash: Bytes
-  commisionTxHash: Bytes
+  commissionTxHash: Bytes
   fee: BigInt
+  history: [String!]!
+  historyTime: [String!]!
   lastActionTime: BigInt
+  buyerNote: String
+  sellerNote: String
 }
 
 type MetaInvoice @entity(immutable: false) {
@@ -61,10 +63,10 @@ type MetaInvoice @entity(immutable: false) {
 
 type User @entity(immutable: false) {
   id: ID!
-  ownedInvoices: [Invoice!]! @derivedFrom(field: "seller")
-  paidInvoices: [Invoice!]! @derivedFrom(field: "buyer")
-  issuedInvoices: [SmartInvoice!]! @derivedFrom(field: "seller")
-  receivedInvoices: [SmartInvoice!]! @derivedFrom(field: "buyer")
+  ownedInvoices: [SimplePaymentProcessor!]! @derivedFrom(field: "seller")
+  paidInvoices: [SimplePaymentProcessor!]! @derivedFrom(field: "buyer")
+  issuedInvoices: [AdvancedPaymentProcessor!]! @derivedFrom(field: "seller")
+  receivedInvoices: [AdvancedPaymentProcessor!]! @derivedFrom(field: "buyer")
   metaInvoices: [MetaInvoice!]! @derivedFrom(field: "buyer")
 }
 
@@ -73,20 +75,19 @@ type AdminAction @entity(immutable: false) {
   invoiceId: String
   action: String
   time: BigInt
-  type: String
+  category: String
   txHash: String
   balance: BigInt
   currency: PaymentToken
 }
 
-# to-do: add symbol
 type PaymentToken @entity(immutable: false) {
   id: ID!
   name: String
   decimal: String
 }
 
-type Type @entity(immutable: false) {
+type InvoiceType @entity(immutable: false) {
   id: ID!
   type: String!
 }

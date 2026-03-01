@@ -16,8 +16,8 @@ dataSources:
       apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
-        - Invoice
-        - Type
+        - SimplePaymentProcessor
+        - InvoiceType
       abis:
         - name: SimplePaymentProcessor
           file: ./abis/SimplePaymentProcessor.json
@@ -40,7 +40,7 @@ dataSources:
           handler: handleInvoiceReleased
         - event: UpdateHoldPeriod(indexed uint216,indexed uint256)
           handler: handleHoldPeriod
-      file: ./src/invoice.ts
+      file: ./src/simple-payment-processor.ts
   - kind: ethereum
     name: AdvancedPaymentProcessor
     network: sepolia
@@ -53,10 +53,9 @@ dataSources:
       apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
-        - Invoice
-        - SmartInvoice
+        - AdvancedPaymentProcessor
         - MetaInvoice
-        - Type
+        - InvoiceType
         - AdminAction
       abis:
         - name: AdvancedPaymentProcessor
@@ -67,7 +66,7 @@ dataSources:
           file: ./abis/PaymentProcessorStorage.json
       eventHandlers:
         - event: InvoiceCreated(indexed uint216,(uint216,uint40,uint40,uint40,uint8,uint216,address,address,address,address,uint256,uint256,uint256))
-          handler: handleSmartInvoiceCreated
+          handler: handleAdvancedPaymentProcessorCreated
         - event: InvoicePaid(indexed uint216,address,address,uint256)
           handler: handleInvoicePaid
         - event: InvoiceCanceled(indexed uint216)
@@ -91,9 +90,7 @@ dataSources:
       callHandlers:
         - function: setPriceFeed(address,address)
           handler: handleAllowedTokens
-        - function: setPriceFeed(address,address)
-          handler: handleAllowedTokens
-      file: ./src/smart-invoice.ts
+      file: ./src/advanced-payment-processor.ts
   - kind: ethereum
     name: Notes
     network: sepolia

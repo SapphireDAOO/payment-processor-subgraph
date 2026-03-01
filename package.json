@@ -2,9 +2,11 @@
   "name": "payment-processor-indexer",
   "license": "UNLICENSED",
   "scripts": {
+    "clean": "rm -rf build generated",
     "codegen": "graph codegen",
     "build": "graph build",
     "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ payment-processor-indexer",
+    "deploy:full": "./scripts/deploy-subgraph.sh",
     "create-local": "graph create --node http://localhost:8020/ payment-processor-indexer",
     "remove-local": "graph remove --node http://localhost:8020/ payment-processor-indexer",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 payment-processor-indexer",
