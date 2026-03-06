@@ -51,12 +51,9 @@ function addHistory(
 }
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
-  const id = event.params.orderId.toString();
-  let invoice = SimplePaymentProcessor.load(id);
-  if (!invoice) {
-    invoice = new SimplePaymentProcessor(id);
-    addHistory(invoice, CREATED, event.block.timestamp);
-  }
+  const id = event.params.invoiceId.toString();
+  const invoice = new SimplePaymentProcessor(id);
+  addHistory(invoice, CREATED, event.block.timestamp);
 
   const invoiceType = new InvoiceType(id);
   invoiceType.type = "SimplePaymentProcessor";
@@ -64,7 +61,7 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   const sellerId = event.params.invoice.seller.toHex();
   getOrCreateUser(sellerId);
 
-  invoice.invoiceId = event.params.invoice.invoiceId.toString();
+  invoice.invoiceNonce = event.params.invoice.invoiceNonce.toString();
   invoice.seller = sellerId;
   invoice.state = CREATED;
   invoice.createdAt = event.block.timestamp;
@@ -79,7 +76,7 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
 }
 
 export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -89,7 +86,7 @@ export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
 }
 
 export function handleInvoicePaid(event: InvoicePaidEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -110,7 +107,7 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
 }
 
 export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -130,7 +127,7 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -143,7 +140,7 @@ export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
 }
 
 export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -157,7 +154,7 @@ export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
 }
 
 export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -171,7 +168,7 @@ export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
 }
 
 export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 

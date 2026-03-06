@@ -22,7 +22,7 @@ import {
   User,
 } from "../generated/schema";
 import { getTokenData } from "./util/token";
-import { getDefaultHoldPeriod, getFee } from "./util/storage";
+import { getFee } from "./util/storage";
 
 const ZERO = BigInt.fromI32(0);
 const CREATED = "CREATED";
@@ -69,8 +69,8 @@ function addHistory(
 export function handleAdvancedPaymentProcessorCreated(
   event: InvoiceCreatedEvent
 ): void {
-  const invoiceId = event.params.invoice.invoiceId.toString();
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
+  const invoiceNonce = event.params.invoice.invoiceNonce.toString();
 
   const invoice = new AdvancedPaymentProcessor(id);
   const adminAction = new AdminAction(id);
@@ -84,7 +84,7 @@ export function handleAdvancedPaymentProcessorCreated(
 
   adminAction.action = CREATED;
   adminAction.time = event.block.timestamp;
-  adminAction.invoiceId = invoiceId;
+  adminAction.invoiceNonce = invoiceNonce;
   adminAction.category = "INVOICE";
   adminAction.txHash = event.transaction.hash.toHex();
 
@@ -96,7 +96,7 @@ export function handleAdvancedPaymentProcessorCreated(
   invoice.state = CREATED;
   invoice.price = event.params.invoice.price;
   invoice.contract = event.address;
-  invoice.invoiceId = invoiceId;
+  invoice.invoiceNonce = invoiceNonce;
   invoice.creationTxHash = event.transaction.hash.toHex();
   invoice.lastActionTime = event.block.timestamp;
   addHistory(invoice, CREATED, event.block.timestamp);
@@ -116,7 +116,7 @@ export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
 
   adminAction.action = CREATED;
   adminAction.time = event.block.timestamp;
-  adminAction.invoiceId = id;
+  adminAction.invoiceNonce = id;
   adminAction.category = "META INVOICE";
   adminAction.txHash = event.transaction.hash.toHex();
 
@@ -130,7 +130,7 @@ export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
 }
 
 export function handleInvoicePaid(event: InvoicePaidV2Event): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -147,7 +147,7 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   invoice.state = PAID;
   invoice.escrow = event.params.escrowAddress;
   invoice.paymentTxHash = event.transaction.hash;
-  invoice.releasedAt = event.block.timestamp.plus(getDefaultHoldPeriod());
+  invoice.releasedAt = event.params.releaseAt;
   invoice.fee = getFee(amountPaid);
   invoice.lastActionTime = event.block.timestamp;
   addHistory(invoice, PAID, event.block.timestamp);
@@ -163,7 +163,7 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -182,7 +182,7 @@ export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
 }
 
 export function handleDisputeCreated(event: DisputeCreatedEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -201,7 +201,7 @@ export function handleDisputeCreated(event: DisputeCreatedEvent): void {
 }
 
 export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -220,7 +220,7 @@ export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
 }
 
 export function handleDisputeResolved(event: DisputeResolvedEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -238,7 +238,7 @@ export function handleDisputeResolved(event: DisputeResolvedEvent): void {
 }
 
 export function handleDisputeSettled(event: DisputeSettledEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -257,7 +257,7 @@ export function handleDisputeSettled(event: DisputeSettledEvent): void {
 }
 
 export function handleRefunded(event: RefundedEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -284,7 +284,7 @@ export function handleRefunded(event: RefundedEvent): void {
 }
 
 export function handlePaymentReleased(event: PaymentReleasedEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -307,7 +307,7 @@ export function handlePaymentReleased(event: PaymentReleasedEvent): void {
 }
 
 export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
-  const id = event.params.orderId.toString();
+  const id = event.params.invoiceId.toString();
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
@@ -318,7 +318,7 @@ export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
 }
 
 export function handleAllowedTokens(call: SetPriceFeedCall): void {
-  const id = call.inputs.token;
+  const id = call.inputs._token;
   const tokenData = getTokenData(id);
   const token = new PaymentToken(id.toHex());
 

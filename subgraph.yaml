@@ -65,9 +65,9 @@ dataSources:
         - name: PaymentProcessorStorage
           file: ./abis/PaymentProcessorStorage.json
       eventHandlers:
-        - event: InvoiceCreated(indexed uint216,(uint216,uint40,uint40,uint40,uint8,uint216,address,address,address,address,uint256,uint256,uint256))
+        - event: InvoiceCreated(indexed uint216,(uint216,uint40,uint40,uint40,uint40,uint8,uint216,address,address,address,address,uint256,uint256,uint256))
           handler: handleAdvancedPaymentProcessorCreated
-        - event: InvoicePaid(indexed uint216,address,address,uint256)
+        - event: InvoicePaid(indexed uint216,address,address,uint256,uint40)
           handler: handleInvoicePaid
         - event: InvoiceCanceled(indexed uint216)
           handler: handleInvoiceCanceled
@@ -81,7 +81,7 @@ dataSources:
           handler: handleDisputeSettled
         - event: MetaInvoiceCreated(indexed uint216,indexed uint256)
           handler: handleMetaInvoiceCreated
-        - event: PaymentReleased(indexed uint216,uint256)
+        - event: PaymentReleased(indexed uint216,address,address,uint256)
           handler: handlePaymentReleased
         - event: Refunded(indexed uint216,indexed uint256)
           handler: handleRefunded

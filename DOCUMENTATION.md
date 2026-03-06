@@ -32,16 +32,16 @@ Each contract event triggers a handler in the corresponding AssemblyScript file 
 - **Start block:** `9905398`
 - **Handler file:** `src/simple-payment-processor.ts`
 
-| Event                                                | Handler                 | Description                                                                |
-| ---------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------- |
-| `InvoiceCreated(orderId, invalidateAt, invoice)`     | `handleInvoiceCreated`  | Creates the `SimplePaymentProcessor` entity and registers an `InvoiceType` |
-| `InvoicePaid(orderId, buyer, amountPaid, expiresAt)` | `handleInvoicePaid`     | Records buyer, amount paid, and payment tx hash                            |
-| `InvoiceAccepted(orderId)`                           | `handleInvoiceAccepted` | Sets the release timestamp and calculates the protocol fee                 |
-| `InvoiceCanceled(orderId)`                           | `handleInvoiceCanceled` | Marks the invoice as `CANCELED`                                            |
-| `InvoiceRejected(orderId)`                           | `handleInvoiceRejected` | Marks the invoice as `REJECTED` and records the refund tx                  |
-| `InvoiceRefunded(orderId)`                           | `handleInvoiceRefunded` | Marks the invoice as `REFUNDED`                                            |
-| `InvoiceReleased(orderId)`                           | `handleInvoiceReleased` | Marks the invoice as `RELEASED` and records the release tx                 |
-| `UpdateHoldPeriod(orderId, releaseDueTimestamp)`     | `handleHoldPeriod`      | Updates the `releasedAt` timestamp                                         |
+| Event                                                    | Handler                 | Description                                                                |
+| -------------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------- |
+| `InvoiceCreated(invoiceId, invalidateAt, invoice)`       | `handleInvoiceCreated`  | Creates the `SimplePaymentProcessor` entity and registers an `InvoiceType` |
+| `InvoicePaid(invoiceId, buyer, amountPaid, expiresAt)`   | `handleInvoicePaid`     | Records buyer, amount paid, and payment tx hash                            |
+| `InvoiceAccepted(invoiceId)`                             | `handleInvoiceAccepted` | Sets the release timestamp and calculates the protocol fee                 |
+| `InvoiceCanceled(invoiceId)`                             | `handleInvoiceCanceled` | Marks the invoice as `CANCELED`                                            |
+| `InvoiceRejected(invoiceId)`                             | `handleInvoiceRejected` | Marks the invoice as `REJECTED` and records the refund tx                  |
+| `InvoiceRefunded(invoiceId)`                             | `handleInvoiceRefunded` | Marks the invoice as `REFUNDED`                                            |
+| `InvoiceReleased(invoiceId)`                             | `handleInvoiceReleased` | Marks the invoice as `RELEASED` and records the release tx                 |
+| `UpdateHoldPeriod(invoiceId, releaseDueTimestamp)`       | `handleHoldPeriod`      | Updates the `releasedAt` timestamp                                         |
 
 ### AdvancedPaymentProcessor
 
@@ -49,20 +49,20 @@ Each contract event triggers a handler in the corresponding AssemblyScript file 
 - **Start block:** `9905398`
 - **Handler file:** `src/advanced-payment-processor.ts`
 
-| Event / Call                                                | Handler                                 | Description                                                                   |
-| ----------------------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------- |
-| `InvoiceCreated(orderId, invoice)`                          | `handleAdvancedPaymentProcessorCreated` | Creates `AdvancedPaymentProcessor`, `AdminAction`, and `InvoiceType` entities |
-| `InvoicePaid(orderId, paymentToken, escrowAddress, amount)` | `handleInvoicePaid`                     | Records payment details, escrow address, and computes fee                     |
-| `InvoiceCanceled(orderId)`                                  | `handleInvoiceCanceled`                 | Marks invoice as `CANCELED`                                                   |
-| `DisputeCreated(orderId)`                                   | `handleDisputeCreated`                  | Marks invoice as `DISPUTED`                                                   |
-| `DisputeDismissed(orderId)`                                 | `handleDisputeDismissed`                | Marks invoice as `DISPUTE DISMISSED`                                          |
-| `DisputeResolved(orderId)`                                  | `handleDisputeResolved`                 | Marks invoice as `DISPUTE RESOLVED`                                           |
-| `DisputeSettled(orderId, sellerAmount, buyerAmount)`        | `handleDisputeSettled`                  | Marks invoice as `DISPUTE SETTLED`, records commission tx                     |
-| `MetaInvoiceCreated(metaInvoiceId, totalPrice)`             | `handleMetaInvoiceCreated`              | Creates a `MetaInvoice` entity                                                |
-| `PaymentReleased(orderId, sellerAmount)`                    | `handlePaymentReleased`                 | Marks invoice as `RELEASED`, zeroes balance                                   |
-| `Refunded(orderId, amount)`                                 | `handleRefunded`                        | Reduces balance; state becomes `REFUNDED` or `PARTIAL REFUND`                 |
-| `UpdateReleaseTime(orderId, newHoldPeriod)`                 | `handleUpdateReleaseTime`               | Extends the escrow hold period                                                |
-| `setPriceFeed(token, aggregator)` (call)                    | `handleAllowedTokens`                   | Creates or updates a `PaymentToken` entity                                    |
+| Event / Call                                                     | Handler                                 | Description                                                                   |
+| ---------------------------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------- |
+| `InvoiceCreated(invoiceId, invoice)`                             | `handleAdvancedPaymentProcessorCreated` | Creates `AdvancedPaymentProcessor`, `AdminAction`, and `InvoiceType` entities |
+| `InvoicePaid(invoiceId, paymentToken, escrowAddress, amount)`    | `handleInvoicePaid`                     | Records payment details, escrow address, and computes fee                     |
+| `InvoiceCanceled(invoiceId)`                                     | `handleInvoiceCanceled`                 | Marks invoice as `CANCELED`                                                   |
+| `DisputeCreated(invoiceId)`                                      | `handleDisputeCreated`                  | Marks invoice as `DISPUTED`                                                   |
+| `DisputeDismissed(invoiceId)`                                    | `handleDisputeDismissed`                | Marks invoice as `DISPUTE DISMISSED`                                          |
+| `DisputeResolved(invoiceId)`                                     | `handleDisputeResolved`                 | Marks invoice as `DISPUTE RESOLVED`                                           |
+| `DisputeSettled(invoiceId, sellerAmount, buyerAmount)`           | `handleDisputeSettled`                  | Marks invoice as `DISPUTE SETTLED`, records commission tx                     |
+| `MetaInvoiceCreated(metaInvoiceId, totalPrice)`                  | `handleMetaInvoiceCreated`              | Creates a `MetaInvoice` entity                                                |
+| `PaymentReleased(invoiceId, receiver, currency, sellerAmount)`   | `handlePaymentReleased`                 | Marks invoice as `RELEASED`, zeroes balance                                   |
+| `Refunded(invoiceId, amount)`                                    | `handleRefunded`                        | Reduces balance; state becomes `REFUNDED` or `PARTIAL REFUND`                 |
+| `UpdateReleaseTime(invoiceId, newHoldPeriod)`                    | `handleUpdateReleaseTime`               | Extends the escrow hold period                                                |
+| `setPriceFeed(token, aggregator)` (call)                         | `handleAllowedTokens`                   | Creates or updates a `PaymentToken` entity                                    |
 
 ### Notes
 
@@ -70,10 +70,10 @@ Each contract event triggers a handler in the corresponding AssemblyScript file 
 - **Start block:** `9905398`
 - **Handler file:** `src/notes.ts`
 
-| Event                                                           | Handler                  | Description                                 |
-| --------------------------------------------------------------- | ------------------------ | ------------------------------------------- |
-| `NoteCreated(orderId, noteId, author, share, encryptedContent)` | `handleNoteCreated`      | Creates a `Note` entity                     |
-| `NoteStateChanged(orderId, noteId, user, opened)`               | `handleNoteStateChanged` | Creates or updates a `NoteOpenState` entity |
+| Event                                                                | Handler                  | Description                                 |
+| -------------------------------------------------------------------- | ------------------------ | ------------------------------------------- |
+| `NoteCreated(invoiceId, noteId, author, share, encryptedContent)`    | `handleNoteCreated`      | Creates a `Note` entity                     |
+| `NoteStateChanged(invoiceId, noteId, user, opened)`                  | `handleNoteStateChanged` | Creates or updates a `NoteOpenState` entity |
 
 ---
 
@@ -81,12 +81,12 @@ Each contract event triggers a handler in the corresponding AssemblyScript file 
 
 ### `SimplePaymentProcessor`
 
-Represents one invoice on the SimplePaymentProcessor contract. The entity `id` is the on-chain `orderId` as a string.
+Represents one invoice on the SimplePaymentProcessor contract. The entity `id` is the on-chain `invoiceId` as a string.
 
 | Field              | Type         | Description                                                                        |
 | ------------------ | ------------ | ---------------------------------------------------------------------------------- |
-| `id`               | `ID!`        | On-chain order ID (numeric string)                                                 |
-| `invoiceId`        | `String`     | Internal invoice identifier encoded in the invoice struct                          |
+| `id`               | `ID!`        | On-chain invoice ID (numeric string)                                               |
+| `invoiceNonce`     | `String`     | Internal invoice nonce encoded in the invoice struct                               |
 | `state`            | `String`     | Current lifecycle state (see [State Machine](#41-simple-payment-processor-states)) |
 | `seller`           | `User`       | Address of the seller who created the invoice                                      |
 | `buyer`            | `User`       | Address of the buyer who paid (null until paid)                                    |
@@ -114,12 +114,12 @@ Represents one invoice on the SimplePaymentProcessor contract. The entity `id` i
 
 ### `AdvancedPaymentProcessor`
 
-Represents one invoice on the AdvancedPaymentProcessor contract. Supports multi-token payments and dispute resolution. The `id` is the on-chain `orderId`.
+Represents one invoice on the AdvancedPaymentProcessor contract. Supports multi-token payments and dispute resolution. The `id` is the on-chain `invoiceId`.
 
 | Field              | Type           | Description                                                                          |
 | ------------------ | -------------- | ------------------------------------------------------------------------------------ |
-| `id`               | `ID!`          | On-chain order ID (numeric string)                                                   |
-| `invoiceId`        | `String`       | Internal invoice identifier from the invoice struct                                  |
+| `id`               | `ID!`          | On-chain invoice ID (numeric string)                                                 |
+| `invoiceNonce`     | `String`       | Internal invoice nonce encoded in the invoice struct                                 |
 | `state`            | `String`       | Current lifecycle state (see [State Machine](#42-advanced-payment-processor-states)) |
 | `seller`           | `User`         | Seller address                                                                       |
 | `buyer`            | `User`         | Buyer address (null until paid)                                                      |
@@ -133,8 +133,6 @@ Represents one invoice on the AdvancedPaymentProcessor contract. Supports multi-
 | `createdAt`        | `BigInt`       | Block timestamp of creation                                                          |
 | `paidAt`           | `BigInt`       | Block timestamp of payment                                                           |
 | `releasedAt`       | `BigInt`       | Timestamp after which funds can be released (updated on `UpdateReleaseTime`)         |
-| `invalidateAt`     | `BigInt`       | Invoice expiry timestamp                                                             |
-| `expiresAt`        | `BigInt`       | Buyer payment window expiry                                                          |
 | `creationTxHash`   | `String`       | Transaction hash of creation                                                         |
 | `paymentTxHash`    | `Bytes`        | Transaction hash of payment                                                          |
 | `commissionTxHash` | `Bytes`        | Transaction hash of release or dispute settlement (when commission is taken)         |
@@ -183,8 +181,8 @@ A log entry recording the most recent admin-level action on an order. One entity
 
 | Field       | Type           | Description                                                           |
 | ----------- | -------------- | --------------------------------------------------------------------- |
-| `id`        | `ID!`          | Same as the order ID                                                  |
-| `invoiceId` | `String`       | Internal invoice identifier                                           |
+| `id`           | `ID!`          | Same as the invoice ID                                                |
+| `invoiceNonce` | `String`       | Internal invoice nonce                                                |
 | `action`    | `String`       | The most recent action performed (e.g. `CREATED`, `PAID`, `CANCELED`) |
 | `category`  | `String`       | Type of order: `INVOICE` or `META INVOICE`                            |
 | `time`      | `BigInt`       | Timestamp of creation                                                 |
@@ -219,12 +217,12 @@ Records whether an order ID belongs to a `SimplePaymentProcessor` or `AdvancedPa
 
 ### `Note`
 
-An encrypted note attached to a specific order. The `id` is `{orderId}-{noteId}`.
+An encrypted note attached to a specific invoice. The `id` is `{invoiceId}-{noteId}`.
 
 | Field              | Type       | Description                                      |
 | ------------------ | ---------- | ------------------------------------------------ |
-| `id`               | `ID!`      | Composite key: `{orderId}-{noteId}`              |
-| `orderId`          | `BigInt!`  | The order this note belongs to                   |
+| `id`               | `ID!`      | Composite key: `{invoiceId}-{noteId}`            |
+| `invoiceId`        | `BigInt!`  | The invoice this note belongs to                 |
 | `noteId`           | `BigInt!`  | Sequential note index within the order           |
 | `author`           | `Bytes!`   | Address of the note author                       |
 | `share`            | `Boolean!` | Whether the note is shared with the counterparty |
@@ -236,12 +234,12 @@ An encrypted note attached to a specific order. The `id` is `{orderId}-{noteId}`
 
 ### `NoteOpenState`
 
-Tracks whether a given user has opened a specific note. The `id` is `{orderId}-{noteId}-{userAddress}`.
+Tracks whether a given user has opened a specific note. The `id` is `{invoiceId}-{noteId}-{userAddress}`.
 
-| Field            | Type       | Description                                   |
-| ---------------- | ---------- | --------------------------------------------- |
-| `id`             | `ID!`      | Composite key: `{orderId}-{noteId}-{address}` |
-| `orderId`        | `BigInt!`  | The order this note belongs to                |
+| Field            | Type       | Description                                      |
+| ---------------- | ---------- | ------------------------------------------------ |
+| `id`             | `ID!`      | Composite key: `{invoiceId}-{noteId}-{address}`  |
+| `invoiceId`      | `BigInt!`  | The invoice this note belongs to                 |
 | `noteId`         | `BigInt!`  | The note index                                |
 | `user`           | `Bytes!`   | The user whose open state is recorded         |
 | `opened`         | `Boolean!` | Whether the user has opened the note          |
@@ -420,7 +418,7 @@ All queries run against the API endpoint:
     orderDirection: desc
   ) {
     id
-    invoiceId
+    invoiceNonce
     seller {
       id
     }
@@ -449,7 +447,7 @@ All queries run against the API endpoint:
     where: { category: "INVOICE" }
   ) {
     id
-    invoiceId
+    invoiceNonce
     action
     category
     txHash
@@ -481,7 +479,7 @@ All queries run against the API endpoint:
 
 ```graphql
 {
-  notes(where: { orderId: "7" }, orderBy: noteId) {
+  notes(where: { invoiceId: 7 }, orderBy: noteId) {
     id
     noteId
     author
@@ -499,7 +497,7 @@ All queries run against the API endpoint:
 {
   noteOpenStates(where: { user: "0xabc123..." }) {
     id
-    orderId
+    invoiceId
     noteId
     opened
     updatedAtBlock
@@ -509,7 +507,7 @@ All queries run against the API endpoint:
 
 ### Look up an order's processor type
 
-Useful when you have an `orderId` but don't know which contract it came from.
+Useful when you have an `invoiceId` but don't know which contract it came from.
 
 ```graphql
 {

@@ -2,23 +2,23 @@ import { BigInt } from "@graphprotocol/graph-ts";
 import { NoteCreated, NoteStateChanged } from "../generated/Notes/Notes";
 import { Note, NoteOpenState } from "../generated/schema";
 
-function noteEntityId(orderId: BigInt, noteId: BigInt): string {
-  return orderId.toString() + "-" + noteId.toString();
+function noteEntityId(invoiceId: BigInt, noteId: BigInt): string {
+  return invoiceId.toString() + "-" + noteId.toString();
 }
 
 function noteOpenStateId(
-  orderId: BigInt,
+  invoiceId: BigInt,
   noteId: BigInt,
   user: string
 ): string {
-  return orderId.toString() + "-" + noteId.toString() + "-" + user;
+  return invoiceId.toString() + "-" + noteId.toString() + "-" + user;
 }
 
 export function handleNoteCreated(event: NoteCreated): void {
-  const id = noteEntityId(event.params.orderId, event.params.noteId);
+  const id = noteEntityId(event.params.invoiceId, event.params.noteId);
 
   const note = new Note(id);
-  note.orderId = event.params.orderId;
+  note.invoiceId = event.params.invoiceId;
   note.noteId = event.params.noteId;
   note.author = event.params.author;
   note.share = event.params.share;
@@ -31,7 +31,7 @@ export function handleNoteCreated(event: NoteCreated): void {
 
 export function handleNoteStateChanged(event: NoteStateChanged): void {
   const id = noteOpenStateId(
-    event.params.orderId,
+    event.params.invoiceId,
     event.params.noteId,
     event.params.user.toHexString()
   );
@@ -39,7 +39,7 @@ export function handleNoteStateChanged(event: NoteStateChanged): void {
   let state = NoteOpenState.load(id);
   if (state == null) {
     state = new NoteOpenState(id);
-    state.orderId = event.params.orderId;
+    state.invoiceId = event.params.invoiceId;
     state.noteId = event.params.noteId;
     state.user = event.params.user;
   }

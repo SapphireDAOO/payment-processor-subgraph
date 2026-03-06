@@ -1,6 +1,6 @@
 type SimplePaymentProcessor @entity(immutable: false) {
   id: ID!
-  invoiceId: String
+  invoiceNonce: String
   state: String
   createdAt: BigInt
   paidAt: BigInt
@@ -27,6 +27,7 @@ type SimplePaymentProcessor @entity(immutable: false) {
 
 type AdvancedPaymentProcessor @entity(immutable: false) {
   id: ID!
+  invoiceNonce: String
   buyer: User
   seller: User
   escrow: Bytes
@@ -41,7 +42,6 @@ type AdvancedPaymentProcessor @entity(immutable: false) {
   price: BigInt
   amountPaid: BigInt
   contract: Bytes!
-  invoiceId: String
   creationTxHash: String
   refundTxHash: Bytes
   commissionTxHash: Bytes
@@ -72,7 +72,7 @@ type User @entity(immutable: false) {
 
 type AdminAction @entity(immutable: false) {
   id: ID!
-  invoiceId: String
+  invoiceNonce: String
   action: String
   time: BigInt
   category: String
@@ -94,7 +94,7 @@ type InvoiceType @entity(immutable: false) {
 
 type Note @entity(immutable: false) {
   id: ID!
-  orderId: BigInt!
+  invoiceId: BigInt!
   noteId: BigInt!
   author: Bytes!
   share: Boolean!
@@ -105,7 +105,7 @@ type Note @entity(immutable: false) {
 
 type NoteOpenState @entity(immutable: false) {
   id: ID!
-  orderId: BigInt!
+  invoiceId: BigInt!
   noteId: BigInt!
   user: Bytes!
   opened: Boolean!
