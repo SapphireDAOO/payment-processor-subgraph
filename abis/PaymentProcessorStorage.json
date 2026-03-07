@@ -8,26 +8,26 @@
         "internalType": "struct IPaymentProcessorStorage.Configuration",
         "components": [
           { "name": "owner", "type": "address", "internalType": "address" },
+          { "name": "feeRate", "type": "uint96", "internalType": "uint96" },
           {
             "name": "feeReceiver",
             "type": "address",
             "internalType": "address"
           },
           {
+            "name": "defaultHoldPeriod",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
             "name": "marketplace",
             "type": "address",
             "internalType": "address"
           },
-          { "name": "feeRate", "type": "uint256", "internalType": "uint256" },
-          {
-            "name": "defaultHoldPeriod",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
           {
             "name": "gasThreshold",
-            "type": "uint256",
-            "internalType": "uint256"
+            "type": "uint96",
+            "internalType": "uint96"
           }
         ]
       }
@@ -342,7 +342,6 @@
     "anonymous": false
   },
   { "type": "error", "name": "AlreadyInitialized", "inputs": [] },
-  { "type": "error", "name": "CallFailed", "inputs": [] },
   { "type": "error", "name": "HoldPeriodCanNotBeZero", "inputs": [] },
   { "type": "error", "name": "InvalidFeeRate", "inputs": [] },
   { "type": "error", "name": "NewOwnerIsZeroAddress", "inputs": [] },

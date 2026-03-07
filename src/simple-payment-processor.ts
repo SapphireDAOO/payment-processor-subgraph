@@ -69,7 +69,7 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   invoice.contract = event.address;
   invoice.creationTxHash = event.transaction.hash.toHex();
   invoice.lastActionTime = event.block.timestamp;
-  invoice.invalidateAt = event.params.invalidateAt;
+  invoice.invalidateAt = event.params.invoice.invalidateAt;
 
   invoiceType.save();
   invoice.save();

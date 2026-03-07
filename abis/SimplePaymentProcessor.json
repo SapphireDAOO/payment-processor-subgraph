@@ -36,7 +36,7 @@
   },
   {
     "type": "function",
-    "name": "CANCELLED",
+    "name": "CANCELED",
     "inputs": [],
     "outputs": [{ "name": "", "type": "uint8", "internalType": "uint8" }],
     "stateMutability": "view"
@@ -126,11 +126,7 @@
     "type": "function",
     "name": "createInvoice",
     "inputs": [
-      {
-        "name": "_invoicePrice",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
+      { "name": "_price", "type": "uint256", "internalType": "uint256" },
       { "name": "_storageRef", "type": "bytes", "internalType": "bytes" },
       { "name": "_share", "type": "bool", "internalType": "bool" }
     ],
@@ -167,7 +163,7 @@
     ],
     "outputs": [
       {
-        "name": "invoiceDetails",
+        "name": "i",
         "type": "tuple",
         "internalType": "struct ISimplePaymentProcessor.Invoice",
         "components": [
@@ -185,7 +181,7 @@
             "internalType": "uint40"
           },
           { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
-          { "name": "status", "type": "uint8", "internalType": "uint8" },
+          { "name": "state", "type": "uint8", "internalType": "uint8" },
           { "name": "seller", "type": "address", "internalType": "address" },
           { "name": "buyer", "type": "address", "internalType": "address" },
           { "name": "escrow", "type": "address", "internalType": "address" },
@@ -322,7 +318,7 @@
     "name": "setInvoiceReleaseTime",
     "inputs": [
       { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
-      { "name": "_holdPeriod", "type": "uint32", "internalType": "uint32" }
+      { "name": "_holdPeriod", "type": "uint40", "internalType": "uint40" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -377,12 +373,6 @@
         "internalType": "uint216"
       },
       {
-        "name": "invalidateAt",
-        "type": "uint40",
-        "indexed": true,
-        "internalType": "uint40"
-      },
-      {
         "name": "invoice",
         "type": "tuple",
         "indexed": false,
@@ -402,7 +392,7 @@
             "internalType": "uint40"
           },
           { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
-          { "name": "status", "type": "uint8", "internalType": "uint8" },
+          { "name": "state", "type": "uint8", "internalType": "uint8" },
           { "name": "seller", "type": "address", "internalType": "address" },
           { "name": "buyer", "type": "address", "internalType": "address" },
           { "name": "escrow", "type": "address", "internalType": "address" },
@@ -504,14 +494,7 @@
   },
   { "type": "error", "name": "AcceptanceWindowExceeded", "inputs": [] },
   { "type": "error", "name": "DuplicateTask", "inputs": [] },
-  { "type": "error", "name": "FeeTooHigh", "inputs": [] },
-  { "type": "error", "name": "FeeValueCanNotBeZero", "inputs": [] },
   { "type": "error", "name": "HoldPeriodHasNotBeenExceeded", "inputs": [] },
-  {
-    "type": "error",
-    "name": "HoldPeriodShouldBeGreaterThanPrevious",
-    "inputs": []
-  },
   {
     "type": "error",
     "name": "IncorrectPaymentAmount",
@@ -534,18 +517,10 @@
     ]
   },
   { "type": "error", "name": "InvoiceAlreadyExists", "inputs": [] },
-  { "type": "error", "name": "InvoiceAlreadyPaid", "inputs": [] },
-  { "type": "error", "name": "InvoiceHasAlreadyBeenReleased", "inputs": [] },
-  { "type": "error", "name": "InvoiceHasNotBeenAccepted", "inputs": [] },
   { "type": "error", "name": "InvoiceIsNoLongerValid", "inputs": [] },
   { "type": "error", "name": "InvoiceNotEligibleForRefund", "inputs": [] },
-  { "type": "error", "name": "InvoiceNotPaid", "inputs": [] },
-  { "type": "error", "name": "InvoicePriceIsTooLow", "inputs": [] },
   { "type": "error", "name": "NotAuthorized", "inputs": [] },
-  { "type": "error", "name": "ReleaseTimeOverflow", "inputs": [] },
   { "type": "error", "name": "SellerCannotPayOwnedInvoice", "inputs": [] },
   { "type": "error", "name": "TaskNotFound", "inputs": [] },
-  { "type": "error", "name": "TransferFailed", "inputs": [] },
-  { "type": "error", "name": "ValueIsTooLow", "inputs": [] },
-  { "type": "error", "name": "ZeroAddressIsNotAllowed", "inputs": [] }
+  { "type": "error", "name": "ValueIsTooLow", "inputs": [] }
 ]
