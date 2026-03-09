@@ -14,7 +14,7 @@
 
 ## 1. Overview
 
-This subgraph indexes three Sapphire DAO smart contracts deployed on the Sepolia testnet:
+This subgraph indexes three Sapphire DAO smart contracts deployed on the Arbitrum Sepolia testnet:
 
 - **SimplePaymentProcessor** — A native-token escrow contract. A seller creates an invoice, the buyer pays in ETH, and the seller accepts (releasing funds after a hold period) or rejects (triggering a refund).
 - **AdvancedPaymentProcessor** — A multi-token escrow contract with dispute resolution, partial refunds, meta-invoices (batch invoices), and USD-price-pegged payments via Chainlink price feeds.
@@ -62,7 +62,7 @@ Each contract event triggers a handler in the corresponding AssemblyScript file 
 | `PaymentReleased(invoiceId, receiver, currency, sellerAmount)`   | `handlePaymentReleased`                 | Marks invoice as `RELEASED`, zeroes balance                                   |
 | `Refunded(invoiceId, amount)`                                    | `handleRefunded`                        | Reduces balance; state becomes `REFUNDED` or `PARTIAL REFUND`                 |
 | `UpdateReleaseTime(invoiceId, newHoldPeriod)`                    | `handleUpdateReleaseTime`               | Extends the escrow hold period                                                |
-| `setPriceFeed(token, aggregator)` (call)                         | `handleAllowedTokens`                   | Creates or updates a `PaymentToken` entity                                    |
+| `setPriceFeed(token, config)` (call)                             | `handleAllowedTokens`                   | Creates or updates a `PaymentToken` entity                                    |
 
 ### Notes
 
@@ -576,7 +576,7 @@ npm run create-local
 npm run deploy-local
 ```
 
-Query at: `http://localhost:8000/subgraphs/name/payment-processor-indexer`
+Query at: `http://localhost:8000/subgraphs/name/payment-processor`
 
 ### Adding a new event handler
 
@@ -611,7 +611,7 @@ npm run deploy:full   # runs scripts/deploy-subgraph.sh
 The `deploy` command in `package.json` always targets `version/latest`. To publish a versioned release, pass `--version-label` manually:
 
 ```bash
-npx graph deploy --studio payment-processor-indexer --version-label v1.0.0
+npx graph deploy --studio payment-processor --version-label v1.0.0
 ```
 
 ### Update contract addresses or start blocks

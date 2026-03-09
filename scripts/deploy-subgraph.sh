@@ -8,12 +8,12 @@ echo "==> Cleaning generated artifacts"
 rm -rf build generated
 
 echo "==> Running code generation"
-npm run codegen
+bun run codegen
 
 echo "==> Building subgraph"
-npm run build
+bun run build
 
 echo "==> Deploying subgraph"
-npm run deploy
+bun run deploy
 
 echo "==> Done"

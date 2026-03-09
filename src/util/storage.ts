@@ -1,7 +1,7 @@
 import { Address, BigInt } from "@graphprotocol/graph-ts";
 import { PaymentProcessorStorage } from "../../generated/AdvancedPaymentProcessor/PaymentProcessorStorage";
 
-const STORAGE_ADDRESS = "0xd4a9e5ac9f54beccd7c12ca6bd7bd026bbf0058d";
+const STORAGE_ADDRESS = "0x5214b494598c706a482a36dc6fece2fdaff3390d";
 
 function bindStorage(): PaymentProcessorStorage {
   return PaymentProcessorStorage.bind(Address.fromString(STORAGE_ADDRESS));
