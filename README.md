@@ -1,21 +1,21 @@
 # Payment Processor Subgraph
 
-A [The Graph](https://thegraph.com) subgraph that indexes on-chain events from the Sapphire DAO payment processor contracts on Arbitrum Sepolia. It exposes a queryable GraphQL API for invoice lifecycle data, dispute history, payment tokens, and encrypted notes.
+A [The Graph](https://thegraph.com) subgraph that indexes on-chain events from the Sapphire DAO payment processor contracts on Base Sepolia. It exposes a queryable GraphQL API for invoice lifecycle data, dispute history, payment tokens, and encrypted notes.
 
 ## API Endpoints
 
 | Environment | URL |
 |---|---|
 | Studio (latest) | `https://api.studio.thegraph.com/query/100227/payment-processor/version/latest` |
-| Local node | `http://localhost:8000/subgraphs/name/payment-processor` |
+| Local node | `http://localhost:8000/subgraphs/name/processor-indexer` |
 
-## Indexed Contracts (Arbitrum Sepolia)
+## Indexed Contracts (Base Sepolia)
 
 | Contract | Address |
 |---|---|
-| SimplePaymentProcessor | `0xd4a9e5ac9f54beccd7c12ca6bd7bd026bbf0058d` |
-| AdvancedPaymentProcessor | `0x3d07827e8a6ba46f37d129df8d99f4ee8aa5685f` |
-| Notes | `0xbe210c16e990e74a92eb85060bb33eb03418c565` |
+| SimplePaymentProcessor | `0x4d87773993894f19c43299a50f01ff60f87e558f` |
+| AdvancedPaymentProcessor | `0x96ab8111b8c9ec5f7ec99c398e83f57bdc47b40e` |
+| Notes | `0x3252ee213af17c4d752aec009adba83b93229b31` |
 
 ## Quick Start
 

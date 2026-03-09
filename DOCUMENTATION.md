@@ -14,11 +14,11 @@
 
 ## 1. Overview
 
-This subgraph indexes three Sapphire DAO smart contracts deployed on the Arbitrum Sepolia testnet:
+This subgraph indexes three Sapphire DAO smart contracts deployed on the Base Sepolia testnet:
 
 - **SimplePaymentProcessor** — A native-token escrow contract. A seller creates an invoice, the buyer pays in ETH, and the seller accepts (releasing funds after a hold period) or rejects (triggering a refund).
 - **AdvancedPaymentProcessor** — A multi-token escrow contract with dispute resolution, partial refunds, meta-invoices (batch invoices), and USD-price-pegged payments via Chainlink price feeds.
-- **Notes** — An encrypted note store attached to orders. Notes are stored off-chain but their on-chain references and open states are indexed here.
+- **Notes** — An encrypted note store attached to invoices. Notes are stored off-chain but their on-chain references and open states are indexed here.
 
 Each contract event triggers a handler in the corresponding AssemblyScript file under `src/`. Handlers read event parameters, optionally call on-chain view functions (via `src/util/storage.ts` and `src/util/token.ts`), and write to the entity store. The `generated/` directory is produced by `graph codegen` from `schema.graphql` and the contract ABIs — do not edit it manually.
 
@@ -28,13 +28,13 @@ Each contract event triggers a handler in the corresponding AssemblyScript file 
 
 ### SimplePaymentProcessor
 
-- **Address:** `0xd4a9e5ac9f54beccd7c12ca6bd7bd026bbf0058d`
-- **Start block:** `9905398`
+- **Address:** `0x4d87773993894f19c43299a50f01ff60f87e558f`
+- **Start block:** `38643870`
 - **Handler file:** `src/simple-payment-processor.ts`
 
 | Event                                                    | Handler                 | Description                                                                |
 | -------------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------- |
-| `InvoiceCreated(invoiceId, invalidateAt, invoice)`       | `handleInvoiceCreated`  | Creates the `SimplePaymentProcessor` entity and registers an `InvoiceType` |
+| `InvoiceCreated(invoiceId, invoice)`                     | `handleInvoiceCreated`  | Creates the `SimplePaymentProcessor` entity and registers an `InvoiceType` |
 | `InvoicePaid(invoiceId, buyer, amountPaid, expiresAt)`   | `handleInvoicePaid`     | Records buyer, amount paid, and payment tx hash                            |
 | `InvoiceAccepted(invoiceId)`                             | `handleInvoiceAccepted` | Sets the release timestamp and calculates the protocol fee                 |
 | `InvoiceCanceled(invoiceId)`                             | `handleInvoiceCanceled` | Marks the invoice as `CANCELED`                                            |
@@ -45,14 +45,14 @@ Each contract event triggers a handler in the corresponding AssemblyScript file 
 
 ### AdvancedPaymentProcessor
 
-- **Address:** `0x3d07827e8a6ba46f37d129df8d99f4ee8aa5685f`
-- **Start block:** `9905398`
+- **Address:** `0x96ab8111b8c9ec5f7ec99c398e83f57bdc47b40e`
+- **Start block:** `38643870`
 - **Handler file:** `src/advanced-payment-processor.ts`
 
 | Event / Call                                                     | Handler                                 | Description                                                                   |
 | ---------------------------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------- |
 | `InvoiceCreated(invoiceId, invoice)`                             | `handleAdvancedPaymentProcessorCreated` | Creates `AdvancedPaymentProcessor`, `AdminAction`, and `InvoiceType` entities |
-| `InvoicePaid(invoiceId, paymentToken, escrowAddress, amount)`    | `handleInvoicePaid`                     | Records payment details, escrow address, and computes fee                     |
+| `InvoicePaid(invoiceId, paymentToken, escrowAddress, amount, releaseAt)` | `handleInvoicePaid`                     | Records payment details, escrow address, release time, and fee                |
 | `InvoiceCanceled(invoiceId)`                                     | `handleInvoiceCanceled`                 | Marks invoice as `CANCELED`                                                   |
 | `DisputeCreated(invoiceId)`                                      | `handleDisputeCreated`                  | Marks invoice as `DISPUTED`                                                   |
 | `DisputeDismissed(invoiceId)`                                    | `handleDisputeDismissed`                | Marks invoice as `DISPUTE DISMISSED`                                          |
@@ -66,8 +66,8 @@ Each contract event triggers a handler in the corresponding AssemblyScript file 
 
 ### Notes
 
-- **Address:** `0xbe210c16e990e74a92eb85060bb33eb03418c565`
-- **Start block:** `9905398`
+- **Address:** `0x3252ee213af17c4d752aec009adba83b93229b31`
+- **Start block:** `38643870`
 - **Handler file:** `src/notes.ts`
 
 | Event                                                                | Handler                  | Description                                 |
@@ -177,18 +177,18 @@ Represents a unique wallet address that has interacted with either processor. Th
 
 ### `AdminAction`
 
-A log entry recording the most recent admin-level action on an order. One entity per order (same `id` as the order). Updated in-place as state changes.
+A log entry recording the most recent admin-level action on an invoice. One entity per invoice (same `id` as the invoice). Updated in-place as state changes.
 
 | Field       | Type           | Description                                                           |
 | ----------- | -------------- | --------------------------------------------------------------------- |
 | `id`           | `ID!`          | Same as the invoice ID                                                |
 | `invoiceNonce` | `String`       | Internal invoice nonce                                                |
 | `action`    | `String`       | The most recent action performed (e.g. `CREATED`, `PAID`, `CANCELED`) |
-| `category`  | `String`       | Type of order: `INVOICE` or `META INVOICE`                            |
+| `category`  | `String`       | Type of invoice action: `INVOICE` or `META INVOICE`                   |
 | `time`      | `BigInt`       | Timestamp of creation                                                 |
 | `txHash`    | `String`       | Transaction hash of the most recent action                            |
 | `balance`   | `BigInt`       | Current escrow balance at last update                                 |
-| `currency`  | `PaymentToken` | Payment token used for this order                                     |
+| `currency`  | `PaymentToken` | Payment token used for this invoice                                   |
 
 ---
 
@@ -206,11 +206,11 @@ Metadata for an ERC20 token that has been whitelisted via `setPriceFeed`. The `i
 
 ### `InvoiceType`
 
-Records whether an order ID belongs to a `SimplePaymentProcessor` or `AdvancedPaymentProcessor` invoice. Useful for cross-contract lookups. The `id` matches the order ID.
+Records whether an invoice ID belongs to a `SimplePaymentProcessor` or `AdvancedPaymentProcessor` invoice. Useful for cross-contract lookups. The `id` matches the invoice ID.
 
 | Field  | Type      | Description                                                                   |
 | ------ | --------- | ----------------------------------------------------------------------------- |
-| `id`   | `ID!`     | Order ID                                                                      |
+| `id`   | `ID!`     | Invoice ID                                                                    |
 | `type` | `String!` | `"SimplePaymentProcessor"`, `"AdvancedPaymentProcessor"`, or `"meta-invoice"` |
 
 ---
@@ -223,7 +223,7 @@ An encrypted note attached to a specific invoice. The `id` is `{invoiceId}-{note
 | ------------------ | ---------- | ------------------------------------------------ |
 | `id`               | `ID!`      | Composite key: `{invoiceId}-{noteId}`            |
 | `invoiceId`        | `BigInt!`  | The invoice this note belongs to                 |
-| `noteId`           | `BigInt!`  | Sequential note index within the order           |
+| `noteId`           | `BigInt!`  | Sequential note index within the invoice         |
 | `author`           | `Bytes!`   | Address of the note author                       |
 | `share`            | `Boolean!` | Whether the note is shared with the counterparty |
 | `encryptedContent` | `Bytes!`   | Encrypted note payload (decrypt off-chain)       |
@@ -475,7 +475,7 @@ All queries run against the API endpoint:
 }
 ```
 
-### Fetch notes for an order
+### Fetch notes for an invoice
 
 ```graphql
 {
@@ -505,7 +505,7 @@ All queries run against the API endpoint:
 }
 ```
 
-### Look up an order's processor type
+### Look up an invoice's processor type
 
 Useful when you have an `invoiceId` but don't know which contract it came from.
 
@@ -576,7 +576,7 @@ npm run create-local
 npm run deploy-local
 ```
 
-Query at: `http://localhost:8000/subgraphs/name/payment-processor`
+Query at: `http://localhost:8000/subgraphs/name/processor-indexer`
 
 ### Adding a new event handler
 
@@ -611,7 +611,7 @@ npm run deploy:full   # runs scripts/deploy-subgraph.sh
 The `deploy` command in `package.json` always targets `version/latest`. To publish a versioned release, pass `--version-label` manually:
 
 ```bash
-npx graph deploy --studio payment-processor --version-label v1.0.0
+npx graph deploy --studio processor-indexer --version-label v1.0.0
 ```
 
 ### Update contract addresses or start blocks
