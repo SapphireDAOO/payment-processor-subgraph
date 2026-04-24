@@ -35,6 +35,11 @@ type AdvancedPaymentProcessor @entity(immutable: false) {
   paymentToken: PaymentToken
   paymentTxHash: Bytes
   releaseHash: Bytes
+  disputeSettledTxHash: Bytes
+  amountReleased: String
+  amountRefunded: String
+  sellerAmountReceivedAfterDispute: String
+  buyerAmountReceivedAfterDispute: String
   state: String
   paidAt: BigInt
   releasedAt: BigInt
@@ -111,4 +116,48 @@ type NoteOpenState @entity(immutable: false) {
   opened: Boolean!
   updatedAtBlock: BigInt!
   updatedAtTx: Bytes!
+}
+
+type MultiSigWallet @entity(immutable: false) {
+  id: ID! # contract address
+  threshold: BigInt!
+  signerCount: BigInt!
+  transactionCount: BigInt!
+  signers: [MultiSigSigner!]! @derivedFrom(field: "wallet")
+  transactions: [MultiSigTransaction!]! @derivedFrom(field: "wallet")
+}
+
+type MultiSigSigner @entity(immutable: false) {
+  id: ID! # wallet address + "-" + signer address
+  wallet: MultiSigWallet!
+  address: Bytes!
+  active: Boolean!
+  addedAt: BigInt!
+  removedAt: BigInt
+  approvals: [MultiSigApproval!]! @derivedFrom(field: "signer")
+}
+
+type MultiSigTransaction @entity(immutable: false) {
+  id: Bytes! # txHash
+  wallet: MultiSigWallet!
+  target: Bytes!
+  value: BigInt!
+  data: Bytes!
+  nonce: BigInt!
+  proposer: Bytes!
+  status: String! # PROPOSED | EXECUTED
+  approvalCount: BigInt!
+  proposedAt: BigInt!
+  executedAt: BigInt
+  executor: Bytes
+  approvals: [MultiSigApproval!]! @derivedFrom(field: "transaction")
+}
+
+type MultiSigApproval @entity(immutable: false) {
+  id: ID! # txHash + "-" + approver
+  transaction: MultiSigTransaction!
+  signer: MultiSigSigner
+  approver: Bytes!
+  approvalCount: BigInt!
+  approvedAt: BigInt!
 }

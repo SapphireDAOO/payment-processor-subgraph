@@ -9,8 +9,8 @@ dataSources:
     network: base-sepolia
     source:
       abi: SimplePaymentProcessor
-      address: "0x4d87773993894f19c43299a50f01ff60f87e558f"
-      startBlock: 38643870
+      address: "0xd70c10c73a716f85d97b5619dadfb6b1b6b6a706"
+      startBlock: 40636475
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -29,7 +29,7 @@ dataSources:
         - event: InvoiceCanceled(indexed uint216)
           handler: handleInvoiceCanceled
         - event: InvoiceCreated(indexed
-            uint216,(uint216,uint40,uint40,uint40,uint40,uint40,uint8,address,address,address,uint256,uint256))
+            uint216,(uint216,uint40,uint40,uint40,uint40,uint40,uint8,uint8,address,address,address,uint256,uint256))
           handler: handleInvoiceCreated
         - event: InvoicePaid(indexed uint216,indexed address,indexed uint256,uint40)
           handler: handleInvoicePaid
@@ -47,8 +47,8 @@ dataSources:
     network: base-sepolia
     source:
       abi: AdvancedPaymentProcessor
-      address: "0x96ab8111b8c9ec5f7ec99c398e83f57bdc47b40e"
-      startBlock: 38643870
+      address: "0x792af6df4f32ac3b8c2745dee42f9e08090c0746"
+      startBlock: 40636475
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -67,7 +67,7 @@ dataSources:
           file: ./abis/PaymentProcessorStorage.json
       eventHandlers:
         - event: InvoiceCreated(indexed
-            uint216,(uint216,uint40,uint40,uint40,uint40,uint8,uint32,uint216,address,address,address,address,uint256,uint256,uint256))
+            uint216,(uint216,uint40,uint40,uint40,uint40,uint8,uint8,uint32,uint216,address,address,address,address,uint256,uint256,uint256))
           handler: handleAdvancedPaymentProcessorCreated
         - event: InvoicePaid(indexed uint216,address,address,uint256,uint40)
           handler: handleInvoicePaid
@@ -89,17 +89,14 @@ dataSources:
           handler: handleRefunded
         - event: UpdateReleaseTime(indexed uint216,uint256)
           handler: handleUpdateReleaseTime
-      callHandlers:
-        - function: setPriceFeed(address,(address,uint96))
-          handler: handleAllowedTokens
       file: ./src/advanced-payment-processor.ts
   - kind: ethereum
     name: Notes
     network: base-sepolia
     source:
       abi: Notes
-      address: "0x3252ee213af17c4d752aec009adba83b93229b31"
-      startBlock: 38643870
+      address: "0x8391a68c01834d252c1dff975a621e8f99020b65"
+      startBlock: 40636475
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -116,3 +113,38 @@ dataSources:
         - event: NoteStateChanged(indexed uint216,indexed uint256,indexed address,bool)
           handler: handleNoteStateChanged
       file: ./src/notes.ts
+  - kind: ethereum
+    name: MultiSig
+    network: base-sepolia
+    source:
+      abi: MultiSig
+      address: "0x0f3beef2be710ab7d79db9732a8ce14a87e1d7fa"
+      startBlock: 40636475
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - MultiSigWallet
+        - MultiSigSigner
+        - MultiSigTransaction
+        - MultiSigApproval
+      abis:
+        - name: MultiSig
+          file: ./abis/MultiSig.json
+      eventHandlers:
+        - event: SignerAdded(indexed address)
+          handler: handleSignerAdded
+        - event: SignerRemoved(indexed address)
+          handler: handleSignerRemoved
+        - event: ThresholdUpdated(uint256,uint256)
+          handler: handleThresholdUpdated
+        - event: TransactionProposed(indexed bytes32,indexed address,uint256,bytes,uint256,indexed address)
+          handler: handleTransactionProposed
+        - event: TransactionApproved(indexed bytes32,indexed address,uint256)
+          handler: handleTransactionApproved
+        - event: TransactionCanceled(indexed bytes32)
+          handler: handleTransactionCanceled
+        - event: TransactionExecuted(indexed bytes32,indexed address)
+          handler: handleTransactionExecuted
+      file: ./src/multi-sig.ts
