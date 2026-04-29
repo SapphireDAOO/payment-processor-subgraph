@@ -118,8 +118,8 @@ dataSources:
     network: base-sepolia
     source:
       abi: MultiSig
-      address: "0x0f3beef2be710ab7d79db9732a8ce14a87e1d7fa"
-      startBlock: 40636475
+      address: "0x331798ef8a2a46b6e6a5864ba7f03016b875f193"
+      startBlock: 40669962
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -141,7 +141,9 @@ dataSources:
           handler: handleThresholdUpdated
         - event: TransactionProposed(indexed bytes32,indexed address,uint256,bytes,uint256,indexed address)
           handler: handleTransactionProposed
-        - event: TransactionApproved(indexed bytes32,indexed address,uint256)
+        - event: ApprovalAdded(indexed bytes32,indexed address,uint256)
+          handler: handleApprovalAdded
+        - event: TransactionApproved(indexed bytes32)
           handler: handleTransactionApproved
         - event: TransactionCanceled(indexed bytes32)
           handler: handleTransactionCanceled

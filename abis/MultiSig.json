@@ -30,8 +30,33 @@
   { "inputs": [], "name": "ThresholdCannotBeZero", "type": "error" },
   { "inputs": [], "name": "TransactionDoesNotExist", "type": "error" },
   { "inputs": [], "name": "TransactionNotApproved", "type": "error" },
-  { "inputs": [], "name": "TransactionNotPending", "type": "error" },
-  { "inputs": [], "name": "TransactionNotPendingOrApproved", "type": "error" },
+  { "inputs": [], "name": "TransactionNotProposed", "type": "error" },
+  { "inputs": [], "name": "TransactionNotProposedOrApproved", "type": "error" },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "txHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "approver",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "approvalCount",
+        "type": "uint256"
+      }
+    ],
+    "name": "ApprovalAdded",
+    "type": "event"
+  },
   {
     "anonymous": false,
     "inputs": [
@@ -85,18 +110,6 @@
         "internalType": "bytes32",
         "name": "txHash",
         "type": "bytes32"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "approver",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "approvalCount",
-        "type": "uint256"
       }
     ],
     "name": "TransactionApproved",

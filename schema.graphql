@@ -145,7 +145,7 @@ type MultiSigTransaction @entity(immutable: false) {
   data: Bytes!
   nonce: BigInt!
   proposer: Bytes!
-  status: String! # PROPOSED | EXECUTED
+  status: String! # PROPOSED | APPROVED | CANCELED | EXECUTED
   approvalCount: BigInt!
   proposedAt: BigInt!
   executedAt: BigInt

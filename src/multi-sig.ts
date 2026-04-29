@@ -1,6 +1,7 @@
 import { Address, BigInt, Bytes } from "@graphprotocol/graph-ts";
 import {
   MultiSig,
+  ApprovalAdded,
   SignerAdded,
   SignerRemoved,
   ThresholdUpdated,
@@ -18,6 +19,7 @@ import {
 
 const ZERO = BigInt.fromI32(0);
 const STATUS_PROPOSED = "PROPOSED";
+const STATUS_APPROVED = "APPROVED";
 const STATUS_CANCELED = "CANCELED";
 const STATUS_EXECUTED = "EXECUTED";
 
@@ -133,7 +135,7 @@ export function handleTransactionProposed(event: TransactionProposed): void {
   wallet.save();
 }
 
-export function handleTransactionApproved(event: TransactionApproved): void {
+export function handleApprovalAdded(event: ApprovalAdded): void {
   let tx = MultiSigTransaction.load(event.params.txHash);
   if (tx == null) return;
 
@@ -152,14 +154,16 @@ export function handleTransactionApproved(event: TransactionApproved): void {
   let signer = MultiSigSigner.load(
     getSignerId(event.address, event.params.approver),
   );
-  if (signer != null) {
-    approval.signer = signer.id;
-  } else {
-    approval.signer = null;
-  }
-
+  approval.signer = signer != null ? signer.id : null;
   approval.approvalCount = event.params.approvalCount;
   approval.save();
+}
+
+export function handleTransactionApproved(event: TransactionApproved): void {
+  let tx = MultiSigTransaction.load(event.params.txHash);
+  if (tx == null) return;
+  tx.status = STATUS_APPROVED;
+  tx.save();
 }
 
 export function handleTransactionExecuted(event: TransactionExecuted): void {
