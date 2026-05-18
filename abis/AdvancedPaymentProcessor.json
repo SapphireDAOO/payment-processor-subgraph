@@ -5,7 +5,8 @@
         "internalType": "address",
         "name": "_paymentProcessorStorageAddress",
         "type": "address"
-      }
+      },
+      { "internalType": "address", "name": "_oracle", "type": "address" }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
@@ -13,6 +14,7 @@
   { "inputs": [], "name": "BuyerCannotBeSeller", "type": "error" },
   { "inputs": [], "name": "DuplicateTask", "type": "error" },
   { "inputs": [], "name": "EmptyMetaInvoice", "type": "error" },
+  { "inputs": [], "name": "EscrowWithdrawFailed", "type": "error" },
   { "inputs": [], "name": "InsufficientBalance", "type": "error" },
   { "inputs": [], "name": "InvalidDisputeResolution", "type": "error" },
   { "inputs": [], "name": "InvalidInvoiceState", "type": "error" },
@@ -26,6 +28,7 @@
   },
   { "inputs": [], "name": "InvalidNativePayment", "type": "error" },
   { "inputs": [], "name": "InvalidPrice", "type": "error" },
+  { "inputs": [], "name": "InvalidSeller", "type": "error" },
   { "inputs": [], "name": "InvalidSellersPayoutShare", "type": "error" },
   { "inputs": [], "name": "InvoiceAlreadyExists", "type": "error" },
   { "inputs": [], "name": "InvoiceDoesNotExist", "type": "error" },
@@ -158,6 +161,11 @@
           { "internalType": "uint40", "name": "expiresAt", "type": "uint40" },
           { "internalType": "uint8", "name": "state", "type": "uint8" },
           {
+            "internalType": "uint8",
+            "name": "withdrawalRetries",
+            "type": "uint8"
+          },
+          {
             "internalType": "uint32",
             "name": "escrowHoldPeriod",
             "type": "uint32"
@@ -227,6 +235,31 @@
       }
     ],
     "name": "InvoicePaid",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint216",
+        "name": "invoiceId",
+        "type": "uint216"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "LockedPaymentRecovered",
     "type": "event"
   },
   {
@@ -308,6 +341,31 @@
         "type": "uint216"
       },
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "TransferFailed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint216",
+        "name": "invoiceId",
+        "type": "uint216"
+      },
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "newHoldPeriod",
@@ -318,93 +376,44 @@
     "type": "event"
   },
   {
-    "inputs": [],
-    "name": "BASIS_POINTS",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint216",
+        "name": "invoiceId",
+        "type": "uint216"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "attempt",
+        "type": "uint8"
+      }
+    ],
+    "name": "WithdrawalRetried",
+    "type": "event"
   },
   {
-    "inputs": [],
-    "name": "CANCELED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "CREATED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "DEFAULT_DECIMAL",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "DEFAULT_MINIMUM_INVOICE_PRICE",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "DISPUTED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "DISPUTE_DISMISSED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "DISPUTE_RESOLVED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "DISPUTE_SETTLED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "PAID",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "REFUNDED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "RELEASED",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "SEQUENCER_GRACE_PERIOD",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "inputs": [
+      { "internalType": "address", "name": "_token", "type": "address" }
+    ],
+    "name": "_getDecimals",
+    "outputs": [
+      { "internalType": "uint8", "name": "tokenDecimals", "type": "uint8" }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -531,6 +540,11 @@
           { "internalType": "uint40", "name": "expiresAt", "type": "uint40" },
           { "internalType": "uint8", "name": "state", "type": "uint8" },
           {
+            "internalType": "uint8",
+            "name": "withdrawalRetries",
+            "type": "uint8"
+          },
+          {
             "internalType": "uint32",
             "name": "escrowHoldPeriod",
             "type": "uint32"
@@ -651,15 +665,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "getSequencerUptimeFeed",
-    "outputs": [
-      { "internalType": "address", "name": "feed", "type": "address" }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       { "internalType": "address", "name": "_paymentToken", "type": "address" },
       { "internalType": "uint256", "name": "_usdAmount", "type": "uint256" }
@@ -680,6 +685,19 @@
     "name": "handleDispute",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "oracle",
+    "outputs": [
+      {
+        "internalType": "contract IOracleManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -752,6 +770,17 @@
   },
   {
     "inputs": [
+      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" },
+      { "internalType": "address", "name": "_recipient", "type": "address" },
+      { "internalType": "uint256", "name": "_amount", "type": "uint256" }
+    ],
+    "name": "releaseLocked",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
       { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" }
     ],
     "name": "resolveDispute",
@@ -791,41 +820,6 @@
       }
     ],
     "name": "setMinimumPrice",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "_token", "type": "address" },
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "aggregator",
-            "type": "address"
-          },
-          { "internalType": "uint96", "name": "heartbeat", "type": "uint96" }
-        ],
-        "internalType": "struct IAdvancedPaymentProcessor.PriceFeedConfig",
-        "name": "_config",
-        "type": "tuple"
-      }
-    ],
-    "name": "setPriceFeed",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_sequencerUptimeFeed",
-        "type": "address"
-      }
-    ],
-    "name": "setSequencerUptimeFeed",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

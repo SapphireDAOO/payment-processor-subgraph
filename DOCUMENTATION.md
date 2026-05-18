@@ -14,11 +14,16 @@
 
 ## 1. Overview
 
-This subgraph indexes three Sapphire DAO smart contracts deployed on the Base Sepolia testnet:
+This subgraph indexes four Sapphire DAO smart contracts deployed on Base Sepolia and reads shared config from the storage contract:
 
 - **SimplePaymentProcessor** — A native-token escrow contract. A seller creates an invoice, the buyer pays in ETH, and the seller accepts (releasing funds after a hold period) or rejects (triggering a refund).
 - **AdvancedPaymentProcessor** — A multi-token escrow contract with dispute resolution, partial refunds, meta-invoices (batch invoices), and USD-price-pegged payments via Chainlink price feeds.
 - **Notes** — An encrypted note store attached to invoices. Notes are stored off-chain but their on-chain references and open states are indexed here.
+- **MultiSig** — A wallet governance contract whose signer set, threshold, proposed transactions, approvals, and executions are indexed here.
+
+Shared helper contract:
+
+- **PaymentProcessorStorage** — Read by mappings through `src/util/storage.ts` for fee rate and default hold period lookups.
 
 Each contract event triggers a handler in the corresponding AssemblyScript file under `src/`. Handlers read event parameters, optionally call on-chain view functions (via `src/util/storage.ts` and `src/util/token.ts`), and write to the entity store. The `generated/` directory is produced by `graph codegen` from `schema.graphql` and the contract ABIs — do not edit it manually.
 
@@ -28,8 +33,8 @@ Each contract event triggers a handler in the corresponding AssemblyScript file 
 
 ### SimplePaymentProcessor
 
-- **Address:** `0x4d87773993894f19c43299a50f01ff60f87e558f`
-- **Start block:** `38643870`
+- **Address:** `0xd70c10c73a716f85d97b5619dadfb6b1b6b6a706`
+- **Start block:** `40636475`
 - **Handler file:** `src/simple-payment-processor.ts`
 
 | Event                                                    | Handler                 | Description                                                                |
@@ -45,8 +50,8 @@ Each contract event triggers a handler in the corresponding AssemblyScript file 
 
 ### AdvancedPaymentProcessor
 
-- **Address:** `0x96ab8111b8c9ec5f7ec99c398e83f57bdc47b40e`
-- **Start block:** `38643870`
+- **Address:** `0x792af6df4f32ac3b8c2745dee42f9e08090c0746`
+- **Start block:** `40636475`
 - **Handler file:** `src/advanced-payment-processor.ts`
 
 | Event / Call                                                     | Handler                                 | Description                                                                   |
@@ -60,20 +65,36 @@ Each contract event triggers a handler in the corresponding AssemblyScript file 
 | `DisputeSettled(invoiceId, sellerAmount, buyerAmount)`           | `handleDisputeSettled`                  | Marks invoice as `DISPUTE SETTLED`, records commission tx                     |
 | `MetaInvoiceCreated(metaInvoiceId, totalPrice)`                  | `handleMetaInvoiceCreated`              | Creates a `MetaInvoice` entity                                                |
 | `PaymentReleased(invoiceId, receiver, currency, sellerAmount)`   | `handlePaymentReleased`                 | Marks invoice as `RELEASED`, zeroes balance                                   |
-| `Refunded(invoiceId, amount)`                                    | `handleRefunded`                        | Reduces balance; state becomes `REFUNDED` or `PARTIAL REFUND`                 |
+| `Refunded(invoiceId, amount)`                                    | `handleRefunded`                        | Reduces balance and marks invoice `REFUNDED`                                  |
 | `UpdateReleaseTime(invoiceId, newHoldPeriod)`                    | `handleUpdateReleaseTime`               | Extends the escrow hold period                                                |
-| `setPriceFeed(token, config)` (call)                             | `handleAllowedTokens`                   | Creates or updates a `PaymentToken` entity                                    |
 
 ### Notes
 
-- **Address:** `0x3252ee213af17c4d752aec009adba83b93229b31`
-- **Start block:** `38643870`
+- **Address:** `0x8391a68c01834d252c1dff975a621e8f99020b65`
+- **Start block:** `40636475`
 - **Handler file:** `src/notes.ts`
 
 | Event                                                                | Handler                  | Description                                 |
 | -------------------------------------------------------------------- | ------------------------ | ------------------------------------------- |
 | `NoteCreated(invoiceId, noteId, author, share, encryptedContent)`    | `handleNoteCreated`      | Creates a `Note` entity                     |
 | `NoteStateChanged(invoiceId, noteId, user, opened)`                  | `handleNoteStateChanged` | Creates or updates a `NoteOpenState` entity |
+
+### MultiSig
+
+- **Address:** `0x331798ef8a2a46b6e6a5864ba7f03016b875f193`
+- **Start block:** `40669962`
+- **Handler file:** `src/multi-sig.ts`
+
+| Event                                                                | Handler                      | Description                                                                       |
+| -------------------------------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------- |
+| `SignerAdded(signer)`                                                | `handleSignerAdded`          | Activates the signer (creates `MultiSigSigner` if new) and bumps `signerCount`    |
+| `SignerRemoved(signer)`                                              | `handleSignerRemoved`        | Deactivates the signer and decrements `signerCount`                               |
+| `ThresholdUpdated(oldThreshold, newThreshold)`                       | `handleThresholdUpdated`     | Updates the wallet approval threshold                                             |
+| `TransactionProposed(txHash, target, value, data, nonce, proposer)`  | `handleTransactionProposed`  | Creates a `MultiSigTransaction` in `PROPOSED` state                               |
+| `ApprovalAdded(txHash, approver, approvalCount)`                     | `handleApprovalAdded`        | Records a `MultiSigApproval` and updates the transaction's `approvalCount`        |
+| `TransactionApproved(txHash)`                                        | `handleTransactionApproved`  | Marks the transaction as `APPROVED` (threshold reached, ready to execute)         |
+| `TransactionCanceled(txHash)`                                        | `handleTransactionCanceled`  | Marks the transaction as `CANCELED`                                               |
+| `TransactionExecuted(txHash, executor)`                              | `handleTransactionExecuted`  | Marks the transaction as `EXECUTED` and records executor + timestamp              |
 
 ---
 
@@ -248,6 +269,74 @@ Tracks whether a given user has opened a specific note. The `id` is `{invoiceId}
 
 ---
 
+### `MultiSigWallet`
+
+The indexed multisig contract. The `id` is the wallet's contract address. State (`threshold`, `signerCount`, `transactionCount`) is kept in sync via `try_*` view-call reads on every event.
+
+| Field              | Type                    | Description                                                       |
+| ------------------ | ----------------------- | ----------------------------------------------------------------- |
+| `id`               | `ID!`                   | Wallet contract address                                           |
+| `threshold`        | `BigInt!`               | Number of approvals required to execute a transaction             |
+| `signerCount`      | `BigInt!`               | Number of currently-active signers                                |
+| `transactionCount` | `BigInt!`               | On-chain nonce (total transactions ever proposed)                 |
+| `signers`          | `[MultiSigSigner!]!`    | Derived: all signers that have ever been added (active or not)    |
+| `transactions`     | `[MultiSigTransaction!]!` | Derived: all proposed transactions                              |
+
+---
+
+### `MultiSigSigner`
+
+A signer record per `(wallet, signer address)`. Re-adding a previously removed signer reactivates the existing record. The `id` is `{walletAddress}-{signerAddress}`.
+
+| Field        | Type                  | Description                                                  |
+| ------------ | --------------------- | ------------------------------------------------------------ |
+| `id`         | `ID!`                 | Composite key: `{walletAddress}-{signerAddress}`             |
+| `wallet`     | `MultiSigWallet!`     | The multisig wallet                                          |
+| `address`    | `Bytes!`              | Signer EOA / contract address                                |
+| `active`     | `Boolean!`            | Whether the signer is currently active                       |
+| `addedAt`    | `BigInt!`             | Timestamp of the most recent `SignerAdded` event             |
+| `removedAt`  | `BigInt`              | Timestamp of the most recent `SignerRemoved` (null if active) |
+| `approvals`  | `[MultiSigApproval!]!` | Derived: every approval this signer has cast                |
+
+---
+
+### `MultiSigTransaction`
+
+A proposed multisig call. The `id` is the on-chain `txHash` (bytes32).
+
+| Field           | Type                   | Description                                                       |
+| --------------- | ---------------------- | ----------------------------------------------------------------- |
+| `id`            | `Bytes!`               | `txHash` of the proposal                                          |
+| `wallet`        | `MultiSigWallet!`      | The multisig that owns this proposal                              |
+| `target`        | `Bytes!`               | Contract / EOA the call is directed at                            |
+| `value`         | `BigInt!`              | Native value attached to the call                                 |
+| `data`          | `Bytes!`               | Calldata for the proposed call                                    |
+| `nonce`         | `BigInt!`              | Wallet nonce assigned at proposal time                            |
+| `proposer`      | `Bytes!`               | Signer that proposed the transaction                              |
+| `status`        | `String!`              | Lifecycle state (see [MultiSig States](#43-multisig-transaction-states)) |
+| `approvalCount` | `BigInt!`              | Current number of approvals                                       |
+| `proposedAt`    | `BigInt!`              | Block timestamp of `TransactionProposed`                          |
+| `executedAt`    | `BigInt`               | Block timestamp of `TransactionExecuted` (null until executed)    |
+| `executor`      | `Bytes`                | Address that executed the transaction                             |
+| `approvals`     | `[MultiSigApproval!]!` | Derived: per-signer approval records                              |
+
+---
+
+### `MultiSigApproval`
+
+One record per `(txHash, approver)` approval. The `id` is `{txHash}-{approverAddress}`.
+
+| Field           | Type                   | Description                                                              |
+| --------------- | ---------------------- | ------------------------------------------------------------------------ |
+| `id`            | `ID!`                  | Composite key: `{txHash}-{approverAddress}`                              |
+| `transaction`   | `MultiSigTransaction!` | The transaction being approved                                           |
+| `signer`        | `MultiSigSigner`       | The signer record (null if the approver has no `MultiSigSigner` entity)  |
+| `approver`      | `Bytes!`               | Approver address (raw, even when no signer record exists)                |
+| `approvalCount` | `BigInt!`              | Running approval count at the time of this approval                      |
+| `approvedAt`    | `BigInt!`              | Block timestamp of the `ApprovalAdded` event                             |
+
+---
+
 ## 4. Invoice State Machines
 
 All timestamps are Unix seconds stored as `BigInt`.
@@ -329,30 +418,60 @@ hold period
    │ DISPUTE  DISPUTE     DISPUTE
    │DISMISSED RESOLVED    SETTLED
    │
-   │ (if balance > 0)      (if balance == 0)
-   ▼                             ▼
-PARTIAL REFUND              REFUNDED
+   ▼
+REFUNDED
 ```
 
-| State               | Meaning                                                           |
-| ------------------- | ----------------------------------------------------------------- |
-| `CREATED`           | Invoice created, awaiting payment                                 |
-| `PAID`              | Buyer paid; funds held in escrow                                  |
-| `RELEASED`          | Funds transferred to seller                                       |
-| `CANCELED`          | Invoice canceled before payment                                   |
-| `DISPUTED`          | Buyer raised a dispute                                            |
-| `DISPUTE DISMISSED` | Admin dismissed the dispute; invoice returns to normal flow       |
-| `DISPUTE RESOLVED`  | Admin resolved the dispute in one party's favor                   |
-| `DISPUTE SETTLED`   | Admin split the funds between buyer and seller                    |
-| `PARTIAL REFUND`    | Part of the escrow balance refunded; remaining balance still held |
-| `REFUNDED`          | Full escrow balance refunded to buyer                             |
+| State               | Meaning                                                       |
+| ------------------- | ------------------------------------------------------------- |
+| `CREATED`           | Invoice created, awaiting payment                             |
+| `PAID`              | Buyer paid; funds held in escrow                              |
+| `RELEASED`          | Funds transferred to seller                                   |
+| `CANCELED`          | Invoice canceled before payment                               |
+| `DISPUTED`          | Buyer raised a dispute                                        |
+| `DISPUTE DISMISSED` | Admin dismissed the dispute; invoice returns to normal flow   |
+| `DISPUTE RESOLVED`  | Admin resolved the dispute in one party's favor               |
+| `DISPUTE SETTLED`   | Admin split the funds between buyer and seller                |
+| `REFUNDED`          | Escrow balance refunded to buyer                              |
+
+---
+
+### 4.3 MultiSig Transaction States
+
+```
+              ┌──────────┐
+              │ PROPOSED │
+              └────┬─────┘
+                   │
+        ┌──────────┴──────────┐
+        │                     │
+  threshold            proposer/signer
+   reached             cancels
+        │                     │
+   ┌────▼─────┐          ┌────▼─────┐
+   │ APPROVED │          │ CANCELED │
+   └────┬─────┘          └──────────┘
+        │
+  signer executes
+        │
+   ┌────▼─────┐
+   │ EXECUTED │
+   └──────────┘
+```
+
+| State      | Meaning                                                                  |
+| ---------- | ------------------------------------------------------------------------ |
+| `PROPOSED` | Transaction proposed; awaiting approvals                                 |
+| `APPROVED` | Approval threshold reached; ready to execute                             |
+| `EXECUTED` | Transaction has been executed on-chain                                   |
+| `CANCELED` | Transaction was canceled before execution                                |
 
 ---
 
 ## 5. Example Queries
 
 All queries run against the API endpoint:
-`https://api.studio.thegraph.com/query/100227/payment-processor/version/latest`
+`https://api.studio.thegraph.com/query/100227/processor-indexer/0.06`
 
 ### Fetch recent simple invoices
 
@@ -529,6 +648,38 @@ Useful when you have an `invoiceId` but don't know which contract it came from.
 }
 ```
 
+### Fetch a multisig wallet with active signers and pending transactions
+
+```graphql
+{
+  multiSigWallet(id: "0x331798ef8a2a46b6e6a5864ba7f03016b875f193") {
+    threshold
+    signerCount
+    transactionCount
+    signers(where: { active: true }) {
+      address
+      addedAt
+    }
+    transactions(
+      where: { status: "PROPOSED" }
+      orderBy: proposedAt
+      orderDirection: desc
+    ) {
+      id
+      target
+      value
+      proposer
+      approvalCount
+      proposedAt
+      approvals {
+        approver
+        approvedAt
+      }
+    }
+  }
+}
+```
+
 ---
 
 ## 6. Development Guide
@@ -608,10 +759,10 @@ npm run deploy:full   # runs scripts/deploy-subgraph.sh
 
 ### Version the subgraph
 
-The `deploy` command in `package.json` always targets `version/latest`. To publish a versioned release, pass `--version-label` manually:
+The `deploy` command in `package.json` prompts for a version label. To publish non-interactively, pass `--version-label` manually:
 
 ```bash
-npx graph deploy --studio processor-indexer --version-label v1.0.0
+npx graph deploy --node https://api.studio.thegraph.com/deploy/ processor-indexer --version-label 0.06
 ```
 
 ### Update contract addresses or start blocks

@@ -234,9 +234,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint96",
         "name": "_newDefaultHoldPeriod",
-        "type": "uint256"
+        "type": "uint96"
       }
     ],
     "name": "setDefaultHoldPeriod",
@@ -246,7 +246,7 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_newFeeRate", "type": "uint256" }
+      { "internalType": "uint96", "name": "_newFeeRate", "type": "uint96" }
     ],
     "name": "setFeeRate",
     "outputs": [],
@@ -268,11 +268,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_newGasThreshold",
-        "type": "uint256"
-      }
+      { "internalType": "uint96", "name": "_newGasThreshold", "type": "uint96" }
     ],
     "name": "setGasThreshold",
     "outputs": [],

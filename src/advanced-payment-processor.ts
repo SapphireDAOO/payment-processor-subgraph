@@ -1,4 +1,4 @@
-import { BigInt } from "@graphprotocol/graph-ts";
+import { Address, BigInt } from "@graphprotocol/graph-ts";
 import {
   DisputeCreated as DisputeCreatedEvent,
   DisputeDismissed as DisputeDismissedEvent,
@@ -10,19 +10,18 @@ import {
   MetaInvoiceCreated as MetaInvoiceCreatedEvent,
   PaymentReleased as PaymentReleasedEvent,
   Refunded as RefundedEvent,
-  SetPriceFeedCall,
   UpdateReleaseTime as UpdateReleaseTimeEvent,
 } from "../generated/AdvancedPaymentProcessor/AdvancedPaymentProcessor";
 import {
   AdminAction,
   MetaInvoice,
-  PaymentToken,
   AdvancedPaymentProcessor,
   InvoiceType,
+  PaymentToken,
   User,
 } from "../generated/schema";
-import { getTokenData } from "./util/token";
 import { getFee } from "./util/storage";
+import { getTokenData } from "./util/token";
 
 const ZERO = BigInt.fromI32(0);
 const CREATED = "CREATED";
@@ -33,7 +32,6 @@ const DISPUTE_DISMISSED = "DISPUTE DISMISSED";
 const DISPUTE_RESOLVED = "DISPUTE RESOLVED";
 const DISPUTE_SETTLED = "DISPUTE SETTLED";
 const REFUNDED = "REFUNDED";
-const PARTIAL_REFUND = "PARTIAL REFUND";
 const RELEASED = "RELEASED";
 
 function getOrCreateUser(id: string): User {
@@ -44,6 +42,20 @@ function getOrCreateUser(id: string): User {
   user.save();
 
   return user;
+}
+
+function getOrCreatePaymentToken(tokenAddress: Address): PaymentToken {
+  const id = tokenAddress.toHex();
+  let token = PaymentToken.load(id);
+  if (token) return token;
+
+  const data = getTokenData(tokenAddress);
+  token = new PaymentToken(id);
+  token.name = data.name;
+  token.decimal = data.decimal;
+  token.save();
+
+  return token;
 }
 
 function addHistory(
@@ -64,6 +76,10 @@ function addHistory(
     : new Array<string>();
   historyTime.push(timestamp.toString());
   entity.historyTime = historyTime;
+}
+
+function getAmountValue(amount: string | null): BigInt {
+  return amount ? BigInt.fromString(amount) : ZERO;
 }
 
 export function handleAdvancedPaymentProcessorCreated(
@@ -99,6 +115,10 @@ export function handleAdvancedPaymentProcessorCreated(
   invoice.invoiceNonce = invoiceNonce;
   invoice.creationTxHash = event.transaction.hash.toHex();
   invoice.lastActionTime = event.block.timestamp;
+  invoice.amountReleased = ZERO.toString();
+  invoice.amountRefunded = ZERO.toString();
+  invoice.sellerAmountReceivedAfterDispute = ZERO.toString();
+  invoice.buyerAmountReceivedAfterDispute = ZERO.toString();
   addHistory(invoice, CREATED, event.block.timestamp);
 
   invoiceType.save();
@@ -139,11 +159,13 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
 
   getOrCreateUser(buyerId);
 
+  const paymentToken = getOrCreatePaymentToken(event.params.paymentToken);
+
   invoice.paidAt = event.block.timestamp;
   invoice.buyer = buyerId;
   invoice.amountPaid = amountPaid;
   invoice.balance = amountPaid;
-  invoice.paymentToken = event.params.paymentToken.toHex();
+  invoice.paymentToken = paymentToken.id;
   invoice.state = PAID;
   invoice.escrow = event.params.escrowAddress;
   invoice.paymentTxHash = event.transaction.hash;
@@ -244,7 +266,13 @@ export function handleDisputeSettled(event: DisputeSettledEvent): void {
 
   invoice.state = DISPUTE_SETTLED;
   invoice.commissionTxHash = event.transaction.hash;
+  invoice.disputeSettledTxHash = event.transaction.hash;
   invoice.lastActionTime = event.block.timestamp;
+  invoice.amountReleased = event.params.sellerAmount.toString();
+  invoice.amountRefunded = event.params.buyerAmount.toString();
+  invoice.sellerAmountReceivedAfterDispute =
+    event.params.sellerAmount.toString();
+  invoice.buyerAmountReceivedAfterDispute = event.params.buyerAmount.toString();
   addHistory(invoice, DISPUTE_SETTLED, event.block.timestamp);
 
   const adminAction = AdminAction.load(id);
@@ -265,12 +293,13 @@ export function handleRefunded(event: RefundedEvent): void {
     invoice.balance = invoice.balance!.minus(event.params.amount);
   }
 
-  const balance = invoice.balance ? invoice.balance! : ZERO;
-  const state = balance.equals(ZERO) ? REFUNDED : PARTIAL_REFUND;
+  const state = REFUNDED;
+  const refunded = getAmountValue(invoice.amountRefunded).plus(event.params.amount);
 
   invoice.state = state;
   invoice.refundTxHash = event.transaction.hash;
   invoice.lastActionTime = event.block.timestamp;
+  invoice.amountRefunded = refunded.toString();
   addHistory(invoice, state, event.block.timestamp);
 
   const adminAction = AdminAction.load(id);
@@ -294,6 +323,7 @@ export function handlePaymentReleased(event: PaymentReleasedEvent): void {
   invoice.commissionTxHash = event.transaction.hash;
   invoice.lastActionTime = event.block.timestamp;
   invoice.balance = ZERO;
+  invoice.amountReleased = event.params.sellerAmount.toString();
   addHistory(invoice, RELEASED, event.block.timestamp);
 
   const adminAction = AdminAction.load(id);
@@ -315,15 +345,4 @@ export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
   invoice.releasedAt = event.block.timestamp.plus(event.params.newHoldPeriod);
 
   invoice.save();
-}
-
-export function handleAllowedTokens(call: SetPriceFeedCall): void {
-  const id = call.inputs._token;
-  const tokenData = getTokenData(id);
-  const token = new PaymentToken(id.toHex());
-
-  token.decimal = tokenData.decimal;
-  token.name = tokenData.name;
-
-  token.save();
 }

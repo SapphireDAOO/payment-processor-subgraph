@@ -1,16 +1,24 @@
 {
   "base-sepolia": {
     "SimplePaymentProcessor": {
-      "address": "0x4d87773993894f19c43299a50f01ff60f87e558f",
-      "startBlock": 38643870
+      "address": "0xd70c10C73a716F85d97b5619dADfb6B1b6b6a706",
+      "startBlock": 40636475
     },
     "AdvancedPaymentProcessor": {
-      "address": "0x96ab8111b8c9ec5f7ec99c398e83f57bdc47b40e",
-      "startBlock": 38643870
+      "address": "0x792AF6DF4f32Ac3b8C2745dEE42f9e08090C0746",
+      "startBlock": 40636475
     },
     "Notes": {
-      "address": "0x3252ee213af17c4d752aec009adba83b93229b31",
-      "startBlock": 38643870
+      "address": "0x8391a68c01834d252C1dFf975A621e8F99020b65",
+      "startBlock": 40636475
+    },
+    "MultiSig": {
+      "address": "0x331798ef8a2a46b6e6a5864ba7f03016b875f193",
+      "startBlock": 40669962
+    },
+    "PaymentProcessorStorage": {
+      "address": "0x13676A686fA96408a70ACBDa6312b330D11Ce390",
+      "startBlock": 40636475
     }
   }
 }

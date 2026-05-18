@@ -5,11 +5,11 @@
     "clean": "rm -rf build generated",
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ processor-indexer",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ payment-processor",
     "deploy:full": "./scripts/deploy-subgraph.sh",
-    "create-local": "graph create --node http://localhost:8020/ processor-indexer",
-    "remove-local": "graph remove --node http://localhost:8020/ processor-indexer",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 processor-indexer",
+    "create-local": "graph create --node http://localhost:8020/ payment-processor",
+    "remove-local": "graph remove --node http://localhost:8020/ payment-processor",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 payment-processor",
     "test": "graph test"
   },
   "dependencies": {
