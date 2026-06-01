@@ -1,4 +1,4 @@
-import { BigInt } from "@graphprotocol/graph-ts";
+import { BigInt, ethereum } from "@graphprotocol/graph-ts";
 import {
   InvoiceAccepted as InvoiceAcceptedEvent,
   InvoiceCanceled as InvoiceCanceledEvent,
@@ -7,10 +7,13 @@ import {
   InvoiceRefunded as InvoiceRefundedEvent,
   InvoiceRejected as InvoiceRejectedEvent,
   InvoiceReleased as InvoiceReleasedEvent,
+  LockedPaymentRecovered as LockedPaymentRecoveredEvent,
+  TransferFailed as TransferFailedEvent,
   UpdateHoldPeriod as UpdateHoldPeriodEvent,
+  WithdrawalRetried as WithdrawalRetriedEvent,
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
-import { SimplePaymentProcessor, InvoiceType, User } from "../generated/schema";
-import { getDefaultHoldPeriod, getFee } from "./util/storage";
+import { InvoiceEvent, SimplePaymentProcessor, User } from "../generated/schema";
+import { getFee } from "./util/storage";
 
 const CREATED = "CREATED";
 const PAID = "PAID";
@@ -19,6 +22,17 @@ const CANCELED = "CANCELED";
 const RELEASED = "RELEASED";
 const REJECTED = "REJECTED";
 const REFUNDED = "REFUNDED";
+const INVOICE_ACCEPTED = "INVOICE_ACCEPTED";
+const INVOICE_CANCELED = "INVOICE_CANCELED";
+const INVOICE_CREATED = "INVOICE_CREATED";
+const INVOICE_PAID = "INVOICE_PAID";
+const INVOICE_REFUNDED = "INVOICE_REFUNDED";
+const INVOICE_REJECTED = "INVOICE_REJECTED";
+const INVOICE_RELEASED = "INVOICE_RELEASED";
+const LOCKED_PAYMENT_RECOVERED = "LOCKED_PAYMENT_RECOVERED";
+const TRANSFER_FAILED = "TRANSFER_FAILED";
+const UPDATE_HOLD_PERIOD = "UPDATE_HOLD_PERIOD";
+const WITHDRAWAL_RETRIED = "WITHDRAWAL_RETRIED";
 
 function getOrCreateUser(id: string): User {
   let user = User.load(id);
@@ -30,49 +44,40 @@ function getOrCreateUser(id: string): User {
   return user;
 }
 
-function addHistory(
-  entity: SimplePaymentProcessor,
-  status: string,
-  timestamp: BigInt
-): void {
-  const historyValue = entity.get("history");
-  const history = historyValue
-    ? historyValue.toStringArray()
-    : new Array<string>();
-  history.push(status);
-  entity.history = history;
+function eventId(event: ethereum.Event): string {
+  return event.transaction.hash.toHex() + "-" + event.logIndex.toString();
+}
 
-  const historyTimeValue = entity.get("historyTime");
-  const historyTime = historyTimeValue
-    ? historyTimeValue.toStringArray()
-    : new Array<string>();
-  historyTime.push(timestamp.toString());
-  entity.historyTime = historyTime;
+function saveInvoiceEvent(
+  event: ethereum.Event,
+  invoiceId: string,
+  eventType: string
+): void {
+  const invoiceEvent = new InvoiceEvent(eventId(event));
+  invoiceEvent.eventType = eventType;
+  invoiceEvent.txHash = event.transaction.hash;
+  invoiceEvent.timestamp = event.block.timestamp;
+  invoiceEvent.simpleInvoice = invoiceId;
+  invoiceEvent.save();
 }
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   const id = event.params.invoiceId.toString();
   const invoice = new SimplePaymentProcessor(id);
-  addHistory(invoice, CREATED, event.block.timestamp);
-
-  const invoiceType = new InvoiceType(id);
-  invoiceType.type = "SimplePaymentProcessor";
 
   const sellerId = event.params.invoice.seller.toHex();
   getOrCreateUser(sellerId);
 
-  invoice.invoiceNonce = event.params.invoice.invoiceNonce.toString();
+  invoice.invoiceNonce = event.params.invoice.invoiceNonce;
   invoice.seller = sellerId;
   invoice.state = CREATED;
-  invoice.createdAt = event.block.timestamp;
   invoice.price = event.params.invoice.price;
   invoice.contract = event.address;
-  invoice.creationTxHash = event.transaction.hash.toHex();
   invoice.lastActionTime = event.block.timestamp;
   invoice.invalidateAt = event.params.invoice.invalidateAt;
 
-  invoiceType.save();
   invoice.save();
+  saveInvoiceEvent(event, id, INVOICE_CREATED);
 }
 
 export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
@@ -80,9 +85,9 @@ export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
-  invoice.releasedAt = event.params.releaseDueTimestamp;
   invoice.lastActionTime = event.block.timestamp;
   invoice.save();
+  saveInvoiceEvent(event, id, UPDATE_HOLD_PERIOD);
 }
 
 export function handleInvoicePaid(event: InvoicePaidEvent): void {
@@ -94,16 +99,13 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
   getOrCreateUser(buyerId);
 
   invoice.buyer = buyerId;
-  invoice.paidAt = event.block.timestamp;
   invoice.state = PAID;
   invoice.amountPaid = event.params.amountPaid;
-  invoice.paymentTxHash = event.transaction.hash;
   invoice.lastActionTime = event.block.timestamp;
   invoice.expiresAt = event.params.expiresAt;
 
-  addHistory(invoice, PAID, event.block.timestamp);
-
   invoice.save();
+  saveInvoiceEvent(event, id, INVOICE_PAID);
 }
 
 export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
@@ -111,19 +113,12 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
-  invoice.commissionTxHash = event.transaction.hash;
-
-  if (!invoice.releasedAt) {
-    invoice.releasedAt = event.block.timestamp.plus(getDefaultHoldPeriod());
-  }
-
   invoice.fee = getFee(invoice.amountPaid!);
   invoice.state = ACCEPTED;
   invoice.lastActionTime = event.block.timestamp;
 
-  addHistory(invoice, ACCEPTED, event.block.timestamp);
-
   invoice.save();
+  saveInvoiceEvent(event, id, INVOICE_ACCEPTED);
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
@@ -134,9 +129,8 @@ export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
   invoice.state = CANCELED;
   invoice.lastActionTime = event.block.timestamp;
 
-  addHistory(invoice, CANCELED, event.block.timestamp);
-
   invoice.save();
+  saveInvoiceEvent(event, id, INVOICE_CANCELED);
 }
 
 export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
@@ -145,12 +139,10 @@ export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
   if (!invoice) return;
 
   invoice.state = REFUNDED;
-  invoice.refundTxHash = event.transaction.hash;
   invoice.lastActionTime = event.block.timestamp;
 
-  addHistory(invoice, REFUNDED, event.block.timestamp);
-
   invoice.save();
+  saveInvoiceEvent(event, id, INVOICE_REFUNDED);
 }
 
 export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
@@ -160,11 +152,9 @@ export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
 
   invoice.state = REJECTED;
   invoice.lastActionTime = event.block.timestamp;
-  invoice.refundTxHash = event.transaction.hash;
-
-  addHistory(invoice, REJECTED, event.block.timestamp);
 
   invoice.save();
+  saveInvoiceEvent(event, id, INVOICE_REJECTED);
 }
 
 export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
@@ -174,9 +164,39 @@ export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
 
   invoice.state = RELEASED;
   invoice.lastActionTime = event.block.timestamp;
-  invoice.releaseHash = event.transaction.hash;
-
-  addHistory(invoice, RELEASED, event.block.timestamp);
 
   invoice.save();
+  saveInvoiceEvent(event, id, INVOICE_RELEASED);
+}
+
+export function handleLockedPaymentRecovered(
+  event: LockedPaymentRecoveredEvent
+): void {
+  const id = event.params.invoiceId.toString();
+  const invoice = SimplePaymentProcessor.load(id);
+  if (!invoice) return;
+
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.save();
+  saveInvoiceEvent(event, id, LOCKED_PAYMENT_RECOVERED);
+}
+
+export function handleTransferFailed(event: TransferFailedEvent): void {
+  const id = event.params.invoiceId.toString();
+  const invoice = SimplePaymentProcessor.load(id);
+  if (!invoice) return;
+
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.save();
+  saveInvoiceEvent(event, id, TRANSFER_FAILED);
+}
+
+export function handleWithdrawalRetried(event: WithdrawalRetriedEvent): void {
+  const id = event.params.invoiceId.toString();
+  const invoice = SimplePaymentProcessor.load(id);
+  if (!invoice) return;
+
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.save();
+  saveInvoiceEvent(event, id, WITHDRAWAL_RETRIED);
 }

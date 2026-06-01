@@ -1,331 +1,351 @@
 [
   {
+    "type": "constructor",
     "inputs": [
       {
-        "components": [
-          { "internalType": "address", "name": "owner", "type": "address" },
-          { "internalType": "uint96", "name": "feeRate", "type": "uint96" },
-          {
-            "internalType": "address",
-            "name": "feeReceiver",
-            "type": "address"
-          },
-          {
-            "internalType": "uint96",
-            "name": "defaultHoldPeriod",
-            "type": "uint96"
-          },
-          {
-            "internalType": "address",
-            "name": "marketplace",
-            "type": "address"
-          },
-          { "internalType": "uint96", "name": "gasThreshold", "type": "uint96" }
-        ],
-        "internalType": "struct IPaymentProcessorStorage.Configuration",
         "name": "_configuration",
-        "type": "tuple"
+        "type": "tuple",
+        "internalType": "struct IPaymentProcessorStorage.Configuration",
+        "components": [
+          { "name": "owner", "type": "address", "internalType": "address" },
+          { "name": "feeRate", "type": "uint96", "internalType": "uint96" },
+          {
+            "name": "feeReceiver",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "defaultHoldPeriod",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "marketplace",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "gasThreshold",
+            "type": "uint96",
+            "internalType": "uint96"
+          }
+        ]
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  { "inputs": [], "name": "AlreadyInitialized", "type": "error" },
-  { "inputs": [], "name": "HoldPeriodCanNotBeZero", "type": "error" },
-  { "inputs": [], "name": "InvalidFeeRate", "type": "error" },
-  { "inputs": [], "name": "NewOwnerIsZeroAddress", "type": "error" },
-  { "inputs": [], "name": "NoHandoverRequest", "type": "error" },
-  { "inputs": [], "name": "NotAuthorized", "type": "error" },
-  { "inputs": [], "name": "Unauthorized", "type": "error" },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "pendingOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnershipHandoverCanceled",
-    "type": "event"
+    "stateMutability": "nonpayable"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "pendingOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnershipHandoverRequested",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "oldOwner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnershipTransferred",
-    "type": "event"
-  },
-  {
-    "inputs": [],
+    "type": "function",
     "name": "BASIS_POINTS",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "DEFAULT_PAYMENT_VALIDITY_PERIOD",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "cancelOwnershipHandover",
+    "inputs": [],
     "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
+    "stateMutability": "payable"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "pendingOwner", "type": "address" }
-    ],
+    "type": "function",
     "name": "completeOwnershipHandover",
+    "inputs": [
+      { "name": "pendingOwner", "type": "address", "internalType": "address" }
+    ],
     "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
+    "stateMutability": "payable"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "getDefaultHoldPeriod",
+    "inputs": [],
     "outputs": [
       {
-        "internalType": "uint256",
         "name": "defaultHoldPeriod",
-        "type": "uint256"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "getFeeRate",
+    "inputs": [],
     "outputs": [
-      { "internalType": "uint256", "name": "feeRate", "type": "uint256" }
+      { "name": "feeRate", "type": "uint256", "internalType": "uint256" }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "getFeeReceiver",
+    "inputs": [],
     "outputs": [
-      { "internalType": "address", "name": "feeReceiver", "type": "address" }
+      { "name": "feeReceiver", "type": "address", "internalType": "address" }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "getGasThreshold",
+    "inputs": [],
     "outputs": [
-      { "internalType": "uint256", "name": "gasThreshold", "type": "uint256" }
+      { "name": "gasThreshold", "type": "uint256", "internalType": "uint256" }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "getMarketplace",
+    "inputs": [],
     "outputs": [
-      { "internalType": "address", "name": "marketplace", "type": "address" }
+      { "name": "marketplace", "type": "address", "internalType": "address" }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "getNextInvoiceNonce",
+    "inputs": [],
     "outputs": [
       {
-        "internalType": "uint216",
         "name": "nextInvoiceNonceValue",
-        "type": "uint216"
+        "type": "uint216",
+        "internalType": "uint216"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "getPaymentValidityDuration",
+    "inputs": [],
     "outputs": [
-      { "internalType": "uint256", "name": "validDuration", "type": "uint256" }
+      {
+        "name": "validDuration",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "owner",
+    "inputs": [],
     "outputs": [
-      { "internalType": "address", "name": "result", "type": "address" }
+      { "name": "result", "type": "address", "internalType": "address" }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "pendingOwner", "type": "address" }
-    ],
+    "type": "function",
     "name": "ownershipHandoverExpiresAt",
-    "outputs": [
-      { "internalType": "uint256", "name": "result", "type": "uint256" }
+    "inputs": [
+      { "name": "pendingOwner", "type": "address", "internalType": "address" }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "outputs": [
+      { "name": "result", "type": "uint256", "internalType": "uint256" }
+    ],
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "renounceOwnership",
+    "inputs": [],
     "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
+    "stateMutability": "payable"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "requestOwnershipHandover",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_authorizedAddress",
-        "type": "address"
-      },
-      { "internalType": "bool", "name": "_authorized", "type": "bool" }
-    ],
-    "name": "setAuthorizedAddress",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint96",
-        "name": "_newDefaultHoldPeriod",
-        "type": "uint96"
-      }
-    ],
-    "name": "setDefaultHoldPeriod",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "uint96", "name": "_newFeeRate", "type": "uint96" }
-    ],
-    "name": "setFeeRate",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_feeReceiverAddress",
-        "type": "address"
-      }
-    ],
-    "name": "setFeeReceiver",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "uint96", "name": "_newGasThreshold", "type": "uint96" }
-    ],
-    "name": "setGasThreshold",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_marketplaceAddress",
-        "type": "address"
-      }
-    ],
-    "name": "setMarketplaceAddress",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_newValidityDuration",
-        "type": "uint256"
-      }
-    ],
-    "name": "setPaymentValidityDuration",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
-    "name": "totalInvoiceCreated",
-    "outputs": [
-      { "internalType": "uint216", "name": "totalInvoices", "type": "uint216" }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "newOwner", "type": "address" }
-    ],
-    "name": "transferOwnership",
     "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
+    "stateMutability": "payable"
   },
   {
-    "inputs": [{ "internalType": "uint216", "name": "_by", "type": "uint216" }],
-    "name": "updateInvoiceNonce",
-    "outputs": [
-      { "internalType": "uint216", "name": "totalInvoices", "type": "uint216" }
+    "type": "function",
+    "name": "setAuthorizedAddress",
+    "inputs": [
+      {
+        "name": "_authorizedAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      { "name": "_authorized", "type": "bool", "internalType": "bool" }
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setDefaultHoldPeriod",
+    "inputs": [
+      {
+        "name": "_newDefaultHoldPeriod",
+        "type": "uint96",
+        "internalType": "uint96"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setFeeRate",
+    "inputs": [
+      { "name": "_newFeeRate", "type": "uint96", "internalType": "uint96" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setFeeReceiver",
+    "inputs": [
+      {
+        "name": "_feeReceiverAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setGasThreshold",
+    "inputs": [
+      {
+        "name": "_newGasThreshold",
+        "type": "uint96",
+        "internalType": "uint96"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMarketplaceAddress",
+    "inputs": [
+      {
+        "name": "_marketplaceAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setPaymentValidityDuration",
+    "inputs": [
+      {
+        "name": "_newValidityDuration",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "totalInvoiceCreated",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "totalInvoices",
+        "type": "uint216",
+        "internalType": "uint216"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "inputs": [
+      { "name": "newOwner", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "updateInvoiceNonce",
+    "inputs": [{ "name": "_by", "type": "uint216", "internalType": "uint216" }],
+    "outputs": [
+      {
+        "name": "totalInvoices",
+        "type": "uint216",
+        "internalType": "uint216"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "OwnershipHandoverCanceled",
+    "inputs": [
+      {
+        "name": "pendingOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipHandoverRequested",
+    "inputs": [
+      {
+        "name": "pendingOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "oldOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  { "type": "error", "name": "AlreadyInitialized", "inputs": [] },
+  { "type": "error", "name": "HoldPeriodCanNotBeZero", "inputs": [] },
+  { "type": "error", "name": "InvalidFeeRate", "inputs": [] },
+  { "type": "error", "name": "NewOwnerIsZeroAddress", "inputs": [] },
+  { "type": "error", "name": "NoHandoverRequest", "inputs": [] },
+  { "type": "error", "name": "NotAuthorized", "inputs": [] },
+  { "type": "error", "name": "Unauthorized", "inputs": [] }
 ]

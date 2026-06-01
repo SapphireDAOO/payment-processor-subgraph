@@ -1,22 +1,26 @@
-import { Address, BigInt } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import {
   DisputeCreated as DisputeCreatedEvent,
   DisputeDismissed as DisputeDismissedEvent,
   DisputeResolved as DisputeResolvedEvent,
   DisputeSettled as DisputeSettledEvent,
+  EscrowCreated as EscrowCreatedEvent,
   InvoiceCanceled as InvoiceCanceledEvent,
   InvoiceCreated as InvoiceCreatedEvent,
   InvoicePaid as InvoicePaidV2Event,
+  LockedPaymentRecovered as LockedPaymentRecoveredEvent,
   MetaInvoiceCreated as MetaInvoiceCreatedEvent,
+  OracleUpdated as OracleUpdatedEvent,
   PaymentReleased as PaymentReleasedEvent,
   Refunded as RefundedEvent,
+  TransferFailed as TransferFailedEvent,
   UpdateReleaseTime as UpdateReleaseTimeEvent,
+  WithdrawalRetried as WithdrawalRetriedEvent,
 } from "../generated/AdvancedPaymentProcessor/AdvancedPaymentProcessor";
 import {
-  AdminAction,
-  MetaInvoice,
   AdvancedPaymentProcessor,
-  InvoiceType,
+  InvoiceEvent,
+  MetaInvoice,
   PaymentToken,
   User,
 } from "../generated/schema";
@@ -28,11 +32,26 @@ const CREATED = "CREATED";
 const PAID = "PAID";
 const CANCELED = "CANCELED";
 const DISPUTED = "DISPUTED";
-const DISPUTE_DISMISSED = "DISPUTE DISMISSED";
-const DISPUTE_RESOLVED = "DISPUTE RESOLVED";
-const DISPUTE_SETTLED = "DISPUTE SETTLED";
+const DISPUTE_DISMISSED = "DISPUTE_DISMISSED";
+const DISPUTE_RESOLVED = "DISPUTE_RESOLVED";
+const DISPUTE_SETTLED = "DISPUTE_SETTLED";
 const REFUNDED = "REFUNDED";
 const RELEASED = "RELEASED";
+const DISPUTE_CREATED = "DISPUTE_CREATED";
+const DISPUTE_DISMISSED_EVENT = "DISPUTE_DISMISSED";
+const DISPUTE_RESOLVED_EVENT = "DISPUTE_RESOLVED";
+const DISPUTE_SETTLED_EVENT = "DISPUTE_SETTLED";
+const ESCROW_CREATED = "ESCROW_CREATED";
+const INVOICE_CANCELED = "INVOICE_CANCELED";
+const INVOICE_CREATED = "INVOICE_CREATED";
+const INVOICE_PAID = "INVOICE_PAID";
+const LOCKED_PAYMENT_RECOVERED = "LOCKED_PAYMENT_RECOVERED";
+const META_INVOICE_CREATED = "META_INVOICE_CREATED";
+const ORACLE_UPDATED = "ORACLE_UPDATED";
+const PAYMENT_RELEASED = "PAYMENT_RELEASED";
+const TRANSFER_FAILED = "TRANSFER_FAILED";
+const UPDATE_RELEASE_TIME = "UPDATE_RELEASE_TIME";
+const WITHDRAWAL_RETRIED = "WITHDRAWAL_RETRIED";
 
 function getOrCreateUser(id: string): User {
   let user = User.load(id);
@@ -42,6 +61,31 @@ function getOrCreateUser(id: string): User {
   user.save();
 
   return user;
+}
+
+function eventId(event: ethereum.Event): string {
+  return event.transaction.hash.toHex() + "-" + event.logIndex.toString();
+}
+
+function saveProcessorEvent(event: ethereum.Event, eventType: string): void {
+  const invoiceEvent = new InvoiceEvent(eventId(event));
+  invoiceEvent.eventType = eventType;
+  invoiceEvent.txHash = event.transaction.hash;
+  invoiceEvent.timestamp = event.block.timestamp;
+  invoiceEvent.save();
+}
+
+function saveInvoiceEvent(
+  event: ethereum.Event,
+  invoiceId: string,
+  eventType: string
+): void {
+  const invoiceEvent = new InvoiceEvent(eventId(event));
+  invoiceEvent.eventType = eventType;
+  invoiceEvent.txHash = event.transaction.hash;
+  invoiceEvent.timestamp = event.block.timestamp;
+  invoiceEvent.advancedInvoice = invoiceId;
+  invoiceEvent.save();
 }
 
 function getOrCreatePaymentToken(tokenAddress: Address): PaymentToken {
@@ -58,39 +102,13 @@ function getOrCreatePaymentToken(tokenAddress: Address): PaymentToken {
   return token;
 }
 
-function addHistory(
-  entity: AdvancedPaymentProcessor,
-  status: string,
-  timestamp: BigInt
-): void {
-  const historyValue = entity.get("history");
-  const history = historyValue
-    ? historyValue.toStringArray()
-    : new Array<string>();
-  history.push(status);
-  entity.history = history;
-
-  const historyTimeValue = entity.get("historyTime");
-  const historyTime = historyTimeValue
-    ? historyTimeValue.toStringArray()
-    : new Array<string>();
-  historyTime.push(timestamp.toString());
-  entity.historyTime = historyTime;
-}
-
-function getAmountValue(amount: string | null): BigInt {
-  return amount ? BigInt.fromString(amount) : ZERO;
-}
-
 export function handleAdvancedPaymentProcessorCreated(
   event: InvoiceCreatedEvent
 ): void {
   const id = event.params.invoiceId.toString();
-  const invoiceNonce = event.params.invoice.invoiceNonce.toString();
+  const invoiceNonce = event.params.invoice.invoiceNonce;
 
   const invoice = new AdvancedPaymentProcessor(id);
-  const adminAction = new AdminAction(id);
-  const invoiceType = new InvoiceType(id);
 
   const buyerId = event.params.invoice.buyer.toHex();
   const sellerId = event.params.invoice.seller.toHex();
@@ -98,55 +116,41 @@ export function handleAdvancedPaymentProcessorCreated(
   getOrCreateUser(buyerId);
   getOrCreateUser(sellerId);
 
-  adminAction.action = CREATED;
-  adminAction.time = event.block.timestamp;
-  adminAction.invoiceNonce = invoiceNonce;
-  adminAction.category = "INVOICE";
-  adminAction.txHash = event.transaction.hash.toHex();
-
-  invoiceType.type = "AdvancedPaymentProcessor";
-
   invoice.buyer = buyerId;
   invoice.seller = sellerId;
-  invoice.createdAt = event.block.timestamp;
   invoice.state = CREATED;
   invoice.price = event.params.invoice.price;
   invoice.contract = event.address;
   invoice.invoiceNonce = invoiceNonce;
-  invoice.creationTxHash = event.transaction.hash.toHex();
   invoice.lastActionTime = event.block.timestamp;
-  invoice.amountReleased = ZERO.toString();
-  invoice.amountRefunded = ZERO.toString();
-  invoice.sellerAmountReceivedAfterDispute = ZERO.toString();
-  invoice.buyerAmountReceivedAfterDispute = ZERO.toString();
-  addHistory(invoice, CREATED, event.block.timestamp);
+  invoice.amountReleased = ZERO;
+  invoice.amountRefunded = ZERO;
+  invoice.sellerAmountReceivedAfterDispute = ZERO;
+  invoice.buyerAmountReceivedAfterDispute = ZERO;
 
-  invoiceType.save();
-  adminAction.save();
+  const metaInvoiceId = event.params.invoice.metaInvoiceId;
+  if (metaInvoiceId.gt(ZERO)) {
+    invoice.metaInvoice = metaInvoiceId.toString();
+  }
+
   invoice.save();
+  saveInvoiceEvent(event, id, INVOICE_CREATED);
 }
 
 export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
   const id = event.params.metaInvoiceId.toString();
   const metaInvoice = new MetaInvoice(id);
-  const invoiceType = new InvoiceType(id);
-  const adminAction = new AdminAction(id);
 
-  invoiceType.type = "meta-invoice";
+  const buyerId = event.transaction.from.toHex();
+  getOrCreateUser(buyerId);
 
-  adminAction.action = CREATED;
-  adminAction.time = event.block.timestamp;
-  adminAction.invoiceNonce = id;
-  adminAction.category = "META INVOICE";
-  adminAction.txHash = event.transaction.hash.toHex();
-
-  metaInvoice.invoiceId = id;
+  metaInvoice.invoiceNonce = event.params.metaInvoiceId;
+  metaInvoice.buyer = buyerId;
   metaInvoice.price = event.params.totalPrice;
   metaInvoice.contract = event.address;
 
   metaInvoice.save();
-  invoiceType.save();
-  adminAction.save();
+  saveProcessorEvent(event, META_INVOICE_CREATED);
 }
 
 export function handleInvoicePaid(event: InvoicePaidV2Event): void {
@@ -159,29 +163,19 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
 
   getOrCreateUser(buyerId);
 
-  const paymentToken = getOrCreatePaymentToken(event.params.paymentToken);
+  const token = getOrCreatePaymentToken(event.params.paymentToken);
 
-  invoice.paidAt = event.block.timestamp;
   invoice.buyer = buyerId;
   invoice.amountPaid = amountPaid;
   invoice.balance = amountPaid;
-  invoice.paymentToken = paymentToken.id;
   invoice.state = PAID;
   invoice.escrow = event.params.escrowAddress;
-  invoice.paymentTxHash = event.transaction.hash;
-  invoice.releasedAt = event.params.releaseAt;
+  invoice.paymentToken = token.id;
   invoice.fee = getFee(amountPaid);
   invoice.lastActionTime = event.block.timestamp;
-  addHistory(invoice, PAID, event.block.timestamp);
 
   invoice.save();
-
-  const adminAction = AdminAction.load(id);
-  if (adminAction) {
-    adminAction.balance = invoice.amountPaid;
-    adminAction.currency = invoice.paymentToken;
-    adminAction.save();
-  }
+  saveInvoiceEvent(event, id, INVOICE_PAID);
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
@@ -191,16 +185,9 @@ export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
 
   invoice.state = CANCELED;
   invoice.lastActionTime = event.block.timestamp;
-  addHistory(invoice, CANCELED, event.block.timestamp);
-
-  const adminAction = AdminAction.load(id);
-  if (adminAction) {
-    adminAction.action = CANCELED;
-    adminAction.txHash = event.transaction.hash.toHex();
-    adminAction.save();
-  }
 
   invoice.save();
+  saveInvoiceEvent(event, id, INVOICE_CANCELED);
 }
 
 export function handleDisputeCreated(event: DisputeCreatedEvent): void {
@@ -210,16 +197,9 @@ export function handleDisputeCreated(event: DisputeCreatedEvent): void {
 
   invoice.state = DISPUTED;
   invoice.lastActionTime = event.block.timestamp;
-  addHistory(invoice, DISPUTED, event.block.timestamp);
-
-  const adminAction = AdminAction.load(id);
-  if (adminAction) {
-    adminAction.action = DISPUTED;
-    adminAction.txHash = event.transaction.hash.toHex();
-    adminAction.save();
-  }
 
   invoice.save();
+  saveInvoiceEvent(event, id, DISPUTE_CREATED);
 }
 
 export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
@@ -229,16 +209,9 @@ export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
 
   invoice.state = DISPUTE_DISMISSED;
   invoice.lastActionTime = event.block.timestamp;
-  addHistory(invoice, DISPUTE_DISMISSED, event.block.timestamp);
-
-  const adminAction = AdminAction.load(id);
-  if (adminAction) {
-    adminAction.action = DISPUTE_DISMISSED;
-    adminAction.txHash = event.transaction.hash.toHex();
-    adminAction.save();
-  }
 
   invoice.save();
+  saveInvoiceEvent(event, id, DISPUTE_DISMISSED_EVENT);
 }
 
 export function handleDisputeResolved(event: DisputeResolvedEvent): void {
@@ -248,15 +221,9 @@ export function handleDisputeResolved(event: DisputeResolvedEvent): void {
 
   invoice.state = DISPUTE_RESOLVED;
   invoice.lastActionTime = event.block.timestamp;
-  addHistory(invoice, DISPUTE_RESOLVED, event.block.timestamp);
-
-  const adminAction = AdminAction.load(id);
-  if (adminAction) {
-    adminAction.action = DISPUTE_RESOLVED;
-    adminAction.save();
-  }
 
   invoice.save();
+  saveInvoiceEvent(event, id, DISPUTE_RESOLVED_EVENT);
 }
 
 export function handleDisputeSettled(event: DisputeSettledEvent): void {
@@ -265,23 +232,14 @@ export function handleDisputeSettled(event: DisputeSettledEvent): void {
   if (!invoice) return;
 
   invoice.state = DISPUTE_SETTLED;
-  invoice.commissionTxHash = event.transaction.hash;
-  invoice.disputeSettledTxHash = event.transaction.hash;
   invoice.lastActionTime = event.block.timestamp;
-  invoice.amountReleased = event.params.sellerAmount.toString();
-  invoice.amountRefunded = event.params.buyerAmount.toString();
-  invoice.sellerAmountReceivedAfterDispute =
-    event.params.sellerAmount.toString();
-  invoice.buyerAmountReceivedAfterDispute = event.params.buyerAmount.toString();
-  addHistory(invoice, DISPUTE_SETTLED, event.block.timestamp);
-
-  const adminAction = AdminAction.load(id);
-  if (adminAction) {
-    adminAction.action = DISPUTE_SETTLED;
-    adminAction.save();
-  }
+  invoice.amountReleased = event.params.sellerAmount;
+  invoice.amountRefunded = event.params.buyerAmount;
+  invoice.sellerAmountReceivedAfterDispute = event.params.sellerAmount;
+  invoice.buyerAmountReceivedAfterDispute = event.params.buyerAmount;
 
   invoice.save();
+  saveInvoiceEvent(event, id, DISPUTE_SETTLED_EVENT);
 }
 
 export function handleRefunded(event: RefundedEvent): void {
@@ -294,22 +252,14 @@ export function handleRefunded(event: RefundedEvent): void {
   }
 
   const state = REFUNDED;
-  const refunded = getAmountValue(invoice.amountRefunded).plus(event.params.amount);
+  const previousRefunded = invoice.amountRefunded ? invoice.amountRefunded! : ZERO;
 
   invoice.state = state;
-  invoice.refundTxHash = event.transaction.hash;
   invoice.lastActionTime = event.block.timestamp;
-  invoice.amountRefunded = refunded.toString();
-  addHistory(invoice, state, event.block.timestamp);
-
-  const adminAction = AdminAction.load(id);
-  if (adminAction) {
-    adminAction.action = state;
-    adminAction.balance = invoice.balance;
-    adminAction.save();
-  }
+  invoice.amountRefunded = previousRefunded.plus(event.params.amount);
 
   invoice.save();
+  saveInvoiceEvent(event, id, REFUNDED);
 }
 
 export function handlePaymentReleased(event: PaymentReleasedEvent): void {
@@ -318,22 +268,12 @@ export function handlePaymentReleased(event: PaymentReleasedEvent): void {
   if (!invoice) return;
 
   invoice.state = RELEASED;
-  invoice.releasedAt = event.block.timestamp;
-  invoice.releaseHash = event.transaction.hash;
-  invoice.commissionTxHash = event.transaction.hash;
   invoice.lastActionTime = event.block.timestamp;
   invoice.balance = ZERO;
-  invoice.amountReleased = event.params.sellerAmount.toString();
-  addHistory(invoice, RELEASED, event.block.timestamp);
-
-  const adminAction = AdminAction.load(id);
-  if (adminAction) {
-    adminAction.action = RELEASED;
-    adminAction.balance = ZERO;
-    adminAction.save();
-  }
+  invoice.amountReleased = event.params.sellerAmount;
 
   invoice.save();
+  saveInvoiceEvent(event, id, PAYMENT_RELEASED);
 }
 
 export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
@@ -342,7 +282,54 @@ export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
   if (!invoice) return;
 
   invoice.lastActionTime = event.block.timestamp;
-  invoice.releasedAt = event.block.timestamp.plus(event.params.newHoldPeriod);
 
   invoice.save();
+  saveInvoiceEvent(event, id, UPDATE_RELEASE_TIME);
+}
+
+export function handleEscrowCreated(event: EscrowCreatedEvent): void {
+  const id = event.params.invoiceId.toString();
+  const invoice = AdvancedPaymentProcessor.load(id);
+  if (!invoice) return;
+
+  invoice.escrow = event.params.escrow;
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.save();
+  saveInvoiceEvent(event, id, ESCROW_CREATED);
+}
+
+export function handleLockedPaymentRecovered(
+  event: LockedPaymentRecoveredEvent
+): void {
+  const id = event.params.invoiceId.toString();
+  const invoice = AdvancedPaymentProcessor.load(id);
+  if (!invoice) return;
+
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.save();
+  saveInvoiceEvent(event, id, LOCKED_PAYMENT_RECOVERED);
+}
+
+export function handleOracleUpdated(event: OracleUpdatedEvent): void {
+  saveProcessorEvent(event, ORACLE_UPDATED);
+}
+
+export function handleTransferFailed(event: TransferFailedEvent): void {
+  const id = event.params.invoiceId.toString();
+  const invoice = AdvancedPaymentProcessor.load(id);
+  if (!invoice) return;
+
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.save();
+  saveInvoiceEvent(event, id, TRANSFER_FAILED);
+}
+
+export function handleWithdrawalRetried(event: WithdrawalRetriedEvent): void {
+  const id = event.params.invoiceId.toString();
+  const invoice = AdvancedPaymentProcessor.load(id);
+  if (!invoice) return;
+
+  invoice.lastActionTime = event.block.timestamp;
+  invoice.save();
+  saveInvoiceEvent(event, id, WITHDRAWAL_RETRIED);
 }

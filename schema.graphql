@@ -1,103 +1,136 @@
-type SimplePaymentProcessor @entity(immutable: false) {
-  id: ID!
-  invoiceNonce: String
-  state: String
-  createdAt: BigInt
-  paidAt: BigInt
-  seller: User
-  buyer: User
-  price: BigInt
-  amountPaid: BigInt
-  releasedAt: BigInt
-  invalidateAt: BigInt
-  expiresAt: BigInt
-  releaseHash: Bytes
-  paymentTxHash: Bytes
-  fee: BigInt
-  contract: Bytes
-  creationTxHash: String
-  commissionTxHash: Bytes
-  refundTxHash: Bytes
-  history: [String!]!
-  historyTime: [String!]!
-  lastActionTime: BigInt
-  buyerNote: String
-  sellerNote: String
+enum SimplePaymentProcessorState {
+  CREATED
+  PAID
+  ACCEPTED
+  CANCELED
+  RELEASED
+  REJECTED
+  REFUNDED
 }
 
-type AdvancedPaymentProcessor @entity(immutable: false) {
-  id: ID!
-  invoiceNonce: String
-  buyer: User
-  seller: User
-  escrow: Bytes
-  balance: BigInt
-  paymentToken: PaymentToken
-  paymentTxHash: Bytes
-  releaseHash: Bytes
-  disputeSettledTxHash: Bytes
-  amountReleased: String
-  amountRefunded: String
-  sellerAmountReceivedAfterDispute: String
-  buyerAmountReceivedAfterDispute: String
-  state: String
-  paidAt: BigInt
-  releasedAt: BigInt
-  createdAt: BigInt
-  price: BigInt
-  amountPaid: BigInt
-  contract: Bytes!
-  creationTxHash: String
-  refundTxHash: Bytes
-  commissionTxHash: Bytes
-  fee: BigInt
-  history: [String!]!
-  historyTime: [String!]!
-  lastActionTime: BigInt
-  buyerNote: String
-  sellerNote: String
+enum AdvancedPaymentProcessorState {
+  CREATED
+  PAID
+  CANCELED
+  DISPUTED
+  DISPUTE_DISMISSED
+  DISPUTE_RESOLVED
+  DISPUTE_SETTLED
+  REFUNDED
+  RELEASED
 }
 
-type MetaInvoice @entity(immutable: false) {
-  id: ID!
-  invoiceId: String
-  buyer: User
-  price: BigInt
-  contract: Bytes!
+enum PaymentProcessorEventType {
+  DISPUTE_CREATED
+  DISPUTE_DISMISSED
+  DISPUTE_RESOLVED
+  DISPUTE_SETTLED
+  ESCROW_CREATED
+  INVOICE_ACCEPTED
+  INVOICE_CANCELED
+  INVOICE_CREATED
+  INVOICE_PAID
+  INVOICE_REFUNDED
+  INVOICE_REJECTED
+  INVOICE_RELEASED
+  LOCKED_PAYMENT_RECOVERED
+  META_INVOICE_CREATED
+  ORACLE_UPDATED
+  PAYMENT_RELEASED
+  REFUNDED
+  TRANSFER_FAILED
+  UPDATE_HOLD_PERIOD
+  UPDATE_RELEASE_TIME
+  WITHDRAWAL_RETRIED
 }
 
-type User @entity(immutable: false) {
+enum MultisigStatus {
+  PROPOSED
+  APPROVED
+  CANCELED
+  EXECUTED
+}
+
+type InvoiceEvent @entity(immutable: true) {
   id: ID!
-  ownedInvoices: [SimplePaymentProcessor!]! @derivedFrom(field: "seller")
-  paidInvoices: [SimplePaymentProcessor!]! @derivedFrom(field: "buyer")
-  issuedInvoices: [AdvancedPaymentProcessor!]! @derivedFrom(field: "seller")
-  receivedInvoices: [AdvancedPaymentProcessor!]! @derivedFrom(field: "buyer")
+  eventType: PaymentProcessorEventType!
+  txHash: Bytes!
+  timestamp: BigInt!
+  simpleInvoice: SimplePaymentProcessor
+  advancedInvoice: AdvancedPaymentProcessor
+}
+
+type User @entity {
+  id: ID!
+  ownedSimpleInvoices: [SimplePaymentProcessor!]! @derivedFrom(field: "seller")
+  paidSimpleInvoices: [SimplePaymentProcessor!]! @derivedFrom(field: "buyer")
+  issuedAdvancedInvoices: [AdvancedPaymentProcessor!]!
+    @derivedFrom(field: "seller")
+  receivedAdvancedInvoices: [AdvancedPaymentProcessor!]!
+    @derivedFrom(field: "buyer")
   metaInvoices: [MetaInvoice!]! @derivedFrom(field: "buyer")
 }
 
-type AdminAction @entity(immutable: false) {
+# commission url is
+type SimplePaymentProcessor @entity {
   id: ID!
-  invoiceNonce: String
-  action: String
-  time: BigInt
-  category: String
-  txHash: String
-  balance: BigInt
-  currency: PaymentToken
+  invoiceNonce: BigInt!
+  state: SimplePaymentProcessorState!
+  seller: User!
+  buyer: User
+  price: BigInt!
+  amountPaid: BigInt
+  invalidateAt: BigInt
+  expiresAt: BigInt
+  fee: BigInt
+  contract: Bytes!
+  events: [InvoiceEvent!]! @derivedFrom(field: "simpleInvoice")
+  lastActionTime: BigInt
+  buyerNote: String
+  sellerNote: String
 }
 
-type PaymentToken @entity(immutable: false) {
+# commission url is either in release or dispute
+type AdvancedPaymentProcessor @entity {
+  id: ID!
+  invoiceNonce: BigInt!
+  state: AdvancedPaymentProcessorState!
+  buyer: User
+  seller: User!
+  price: BigInt!
+  escrow: Bytes
+  balance: BigInt
+  paymentToken: PaymentToken
+  amountReleased: BigInt
+  amountRefunded: BigInt
+  sellerAmountReceivedAfterDispute: BigInt
+  buyerAmountReceivedAfterDispute: BigInt
+  amountPaid: BigInt
+  contract: Bytes!
+  events: [InvoiceEvent!]! @derivedFrom(field: "advancedInvoice")
+  fee: BigInt
+  lastActionTime: BigInt
+  metaInvoice: MetaInvoice
+  buyerNote: String
+  sellerNote: String
+}
+
+type MetaInvoice @entity {
+  id: ID!
+  invoiceNonce: BigInt!
+  buyer: User!
+  price: BigInt!
+  contract: Bytes!
+  invoices: [AdvancedPaymentProcessor!]! @derivedFrom(field: "metaInvoice")
+}
+
+type PaymentToken @entity {
   id: ID!
   name: String
-  decimal: String
+  decimal: Int
 }
 
-type InvoiceType @entity(immutable: false) {
-  id: ID!
-  type: String!
-}
-
-type Note @entity(immutable: false) {
+type Note @entity(immutable: true) {
   id: ID!
   invoiceId: BigInt!
   noteId: BigInt!
@@ -108,7 +141,7 @@ type Note @entity(immutable: false) {
   createdAtTx: Bytes!
 }
 
-type NoteOpenState @entity(immutable: false) {
+type NoteOpenState @entity {
   id: ID!
   invoiceId: BigInt!
   noteId: BigInt!
@@ -118,7 +151,7 @@ type NoteOpenState @entity(immutable: false) {
   updatedAtTx: Bytes!
 }
 
-type MultiSigWallet @entity(immutable: false) {
+type MultiSigWallet @entity {
   id: ID! # contract address
   threshold: BigInt!
   signerCount: BigInt!
@@ -127,7 +160,7 @@ type MultiSigWallet @entity(immutable: false) {
   transactions: [MultiSigTransaction!]! @derivedFrom(field: "wallet")
 }
 
-type MultiSigSigner @entity(immutable: false) {
+type MultiSigSigner @entity {
   id: ID! # wallet address + "-" + signer address
   wallet: MultiSigWallet!
   address: Bytes!
@@ -137,7 +170,7 @@ type MultiSigSigner @entity(immutable: false) {
   approvals: [MultiSigApproval!]! @derivedFrom(field: "signer")
 }
 
-type MultiSigTransaction @entity(immutable: false) {
+type MultiSigTransaction @entity {
   id: Bytes! # txHash
   wallet: MultiSigWallet!
   target: Bytes!
@@ -145,7 +178,7 @@ type MultiSigTransaction @entity(immutable: false) {
   data: Bytes!
   nonce: BigInt!
   proposer: Bytes!
-  status: String! # PROPOSED | APPROVED | CANCELED | EXECUTED
+  status: MultisigStatus!
   approvalCount: BigInt!
   proposedAt: BigInt!
   executedAt: BigInt
@@ -153,7 +186,7 @@ type MultiSigTransaction @entity(immutable: false) {
   approvals: [MultiSigApproval!]! @derivedFrom(field: "transaction")
 }
 
-type MultiSigApproval @entity(immutable: false) {
+type MultiSigApproval @entity {
   id: ID! # txHash + "-" + approver
   transaction: MultiSigTransaction!
   signer: MultiSigSigner

@@ -17,7 +17,7 @@ dataSources:
       language: wasm/assemblyscript
       entities:
         - SimplePaymentProcessor
-        - InvoiceType
+        - InvoiceEvent
       abis:
         - name: SimplePaymentProcessor
           file: ./abis/SimplePaymentProcessor.json
@@ -39,8 +39,14 @@ dataSources:
           handler: handleInvoiceRejected
         - event: InvoiceReleased(indexed uint216)
           handler: handleInvoiceReleased
+        - event: LockedPaymentRecovered(indexed uint216,indexed address,uint256)
+          handler: handleLockedPaymentRecovered
+        - event: TransferFailed(indexed uint216,indexed address,uint256)
+          handler: handleTransferFailed
         - event: UpdateHoldPeriod(indexed uint216,indexed uint256)
           handler: handleHoldPeriod
+        - event: WithdrawalRetried(indexed uint216,indexed address,uint256,uint8)
+          handler: handleWithdrawalRetried
       file: ./src/simple-payment-processor.ts
   - kind: ethereum
     name: AdvancedPaymentProcessor
@@ -56,7 +62,7 @@ dataSources:
       entities:
         - AdvancedPaymentProcessor
         - MetaInvoice
-        - InvoiceType
+        - InvoiceEvent
         - AdminAction
       abis:
         - name: AdvancedPaymentProcessor
@@ -81,14 +87,24 @@ dataSources:
           handler: handleDisputeResolved
         - event: DisputeSettled(indexed uint216,uint256,uint256)
           handler: handleDisputeSettled
+        - event: EscrowCreated(indexed uint216,indexed address)
+          handler: handleEscrowCreated
+        - event: LockedPaymentRecovered(indexed uint216,indexed address,uint256)
+          handler: handleLockedPaymentRecovered
         - event: MetaInvoiceCreated(indexed uint216,indexed uint256)
           handler: handleMetaInvoiceCreated
+        - event: OracleUpdated(indexed address,indexed address)
+          handler: handleOracleUpdated
         - event: PaymentReleased(indexed uint216,address,address,uint256)
           handler: handlePaymentReleased
         - event: Refunded(indexed uint216,indexed uint256)
           handler: handleRefunded
+        - event: TransferFailed(indexed uint216,indexed address,uint256)
+          handler: handleTransferFailed
         - event: UpdateReleaseTime(indexed uint216,uint256)
           handler: handleUpdateReleaseTime
+        - event: WithdrawalRetried(indexed uint216,indexed address,uint256,uint8)
+          handler: handleWithdrawalRetried
       file: ./src/advanced-payment-processor.ts
   - kind: ethereum
     name: Notes
@@ -150,3 +166,25 @@ dataSources:
         - event: TransactionExecuted(indexed bytes32,indexed address)
           handler: handleTransactionExecuted
       file: ./src/multi-sig.ts
+  - kind: ethereum
+    name: OracleManager
+    network: base-sepolia
+    source:
+      abi: OracleManager
+      address: "0x0000000000000000000000000000000000000000"
+      startBlock: 40636475
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - PaymentToken
+      abis:
+        - name: OracleManager
+          file: ./abis/OracleManager.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: PriceFeedSet(indexed address,indexed address,uint96)
+          handler: handlePriceFeedSet
+      file: ./src/oracle-manager.ts

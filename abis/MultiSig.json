@@ -1,327 +1,335 @@
 [
   {
+    "type": "constructor",
     "inputs": [
       {
-        "internalType": "address[]",
         "name": "_initialSigners",
-        "type": "address[]"
+        "type": "address[]",
+        "internalType": "address[]"
       },
       {
-        "internalType": "uint256",
         "name": "_initialThreshold",
-        "type": "uint256"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  { "inputs": [], "name": "AlreadyASigner", "type": "error" },
-  { "inputs": [], "name": "AlreadyApproved", "type": "error" },
-  { "inputs": [], "name": "AlreadyApprovedByThisSigner", "type": "error" },
-  { "inputs": [], "name": "AlreadyExecuted", "type": "error" },
-  { "inputs": [], "name": "ExecutionFailed", "type": "error" },
-  { "inputs": [], "name": "InsufficientSigners", "type": "error" },
-  { "inputs": [], "name": "InvalidTarget", "type": "error" },
-  { "inputs": [], "name": "InvalidThreshold", "type": "error" },
-  { "inputs": [], "name": "NotASigner", "type": "error" },
-  { "inputs": [], "name": "NotSelf", "type": "error" },
-  { "inputs": [], "name": "NotSigner", "type": "error" },
-  { "inputs": [], "name": "SignerCountBelowThreshold", "type": "error" },
-  { "inputs": [], "name": "ThresholdCannotBeZero", "type": "error" },
-  { "inputs": [], "name": "TransactionDoesNotExist", "type": "error" },
-  { "inputs": [], "name": "TransactionNotApproved", "type": "error" },
-  { "inputs": [], "name": "TransactionNotProposed", "type": "error" },
-  { "inputs": [], "name": "TransactionNotProposedOrApproved", "type": "error" },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "txHash",
-        "type": "bytes32"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "approver",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "approvalCount",
-        "type": "uint256"
-      }
-    ],
-    "name": "ApprovalAdded",
-    "type": "event"
+    "stateMutability": "nonpayable"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      }
-    ],
-    "name": "SignerAdded",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      }
-    ],
-    "name": "SignerRemoved",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "oldThreshold",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "newThreshold",
-        "type": "uint256"
-      }
-    ],
-    "name": "ThresholdUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "txHash",
-        "type": "bytes32"
-      }
-    ],
-    "name": "TransactionApproved",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "txHash",
-        "type": "bytes32"
-      }
-    ],
-    "name": "TransactionCanceled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "txHash",
-        "type": "bytes32"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "executor",
-        "type": "address"
-      }
-    ],
-    "name": "TransactionExecuted",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "txHash",
-        "type": "bytes32"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "target",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "nonce",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "proposer",
-        "type": "address"
-      }
-    ],
-    "name": "TransactionProposed",
-    "type": "event"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "_signer", "type": "address" }
-    ],
+    "type": "function",
     "name": "addSigner",
+    "inputs": [
+      { "name": "_signer", "type": "address", "internalType": "address" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      { "internalType": "bytes32", "name": "_txHash", "type": "bytes32" }
-    ],
+    "type": "function",
     "name": "approveTransaction",
+    "inputs": [
+      { "name": "_txHash", "type": "bytes32", "internalType": "bytes32" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      { "internalType": "bytes32", "name": "_txHash", "type": "bytes32" }
-    ],
+    "type": "function",
     "name": "cancelTransaction",
+    "inputs": [
+      { "name": "_txHash", "type": "bytes32", "internalType": "bytes32" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      { "internalType": "bytes32", "name": "_txHash", "type": "bytes32" }
-    ],
+    "type": "function",
     "name": "executeTransaction",
-    "outputs": [{ "internalType": "bytes", "name": "", "type": "bytes" }],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getNonce",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getSignerCount",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getThreshold",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
-      { "internalType": "bytes32", "name": "_txHash", "type": "bytes32" }
+      { "name": "_txHash", "type": "bytes32", "internalType": "bytes32" }
     ],
+    "outputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getNonce",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getSignerCount",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getThreshold",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getTransaction",
+    "inputs": [
+      { "name": "_txHash", "type": "bytes32", "internalType": "bytes32" }
+    ],
     "outputs": [
       {
-        "components": [
-          { "internalType": "address", "name": "target", "type": "address" },
-          { "internalType": "uint256", "name": "value", "type": "uint256" },
-          { "internalType": "bytes", "name": "data", "type": "bytes" },
-          { "internalType": "uint256", "name": "nonce", "type": "uint256" },
-          { "internalType": "uint8", "name": "status", "type": "uint8" },
-          {
-            "internalType": "uint256",
-            "name": "approvalCount",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct IMultiSig.Transaction",
         "name": "",
-        "type": "tuple"
+        "type": "tuple",
+        "internalType": "struct IMultiSig.Transaction",
+        "components": [
+          { "name": "target", "type": "address", "internalType": "address" },
+          { "name": "value", "type": "uint256", "internalType": "uint256" },
+          { "name": "data", "type": "bytes", "internalType": "bytes" },
+          { "name": "nonce", "type": "uint256", "internalType": "uint256" },
+          { "name": "status", "type": "uint8", "internalType": "uint8" },
+          {
+            "name": "approvalCount",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      { "internalType": "bytes32", "name": "_txHash", "type": "bytes32" },
-      { "internalType": "address", "name": "_signer", "type": "address" }
-    ],
+    "type": "function",
     "name": "hasApproved",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [
+      { "name": "_txHash", "type": "bytes32", "internalType": "bytes32" },
+      { "name": "_signer", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "_account", "type": "address" }
-    ],
+    "type": "function",
     "name": "isSigner",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [
+      { "name": "_account", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "_target", "type": "address" },
-      { "internalType": "uint256", "name": "_value", "type": "uint256" },
-      { "internalType": "bytes", "name": "_data", "type": "bytes" }
-    ],
+    "type": "function",
     "name": "proposeTransaction",
+    "inputs": [
+      { "name": "_target", "type": "address", "internalType": "address" },
+      { "name": "_value", "type": "uint256", "internalType": "uint256" },
+      { "name": "_data", "type": "bytes", "internalType": "bytes" }
+    ],
     "outputs": [
-      { "internalType": "bytes32", "name": "txHash", "type": "bytes32" }
+      { "name": "txHash", "type": "bytes32", "internalType": "bytes32" }
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "_signer", "type": "address" }
-    ],
+    "type": "function",
     "name": "removeSigner",
+    "inputs": [
+      { "name": "_signer", "type": "address", "internalType": "address" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      { "internalType": "uint256", "name": "_newThreshold", "type": "uint256" }
-    ],
+    "type": "function",
     "name": "updateThreshold",
+    "inputs": [
+      {
+        "name": "_newThreshold",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "ApprovalAdded",
+    "inputs": [
+      {
+        "name": "txHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "approver",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "approvalCount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SignerAdded",
+    "inputs": [
+      {
+        "name": "signer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SignerRemoved",
+    "inputs": [
+      {
+        "name": "signer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ThresholdUpdated",
+    "inputs": [
+      {
+        "name": "oldThreshold",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newThreshold",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TransactionApproved",
+    "inputs": [
+      {
+        "name": "txHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TransactionCanceled",
+    "inputs": [
+      {
+        "name": "txHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TransactionExecuted",
+    "inputs": [
+      {
+        "name": "txHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "executor",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TransactionProposed",
+    "inputs": [
+      {
+        "name": "txHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "target",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
+      },
+      {
+        "name": "nonce",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "proposer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  { "type": "error", "name": "AlreadyASigner", "inputs": [] },
+  { "type": "error", "name": "AlreadyApproved", "inputs": [] },
+  { "type": "error", "name": "AlreadyApprovedByThisSigner", "inputs": [] },
+  { "type": "error", "name": "AlreadyExecuted", "inputs": [] },
+  { "type": "error", "name": "ExecutionFailed", "inputs": [] },
+  { "type": "error", "name": "InsufficientSigners", "inputs": [] },
+  { "type": "error", "name": "InvalidTarget", "inputs": [] },
+  { "type": "error", "name": "InvalidThreshold", "inputs": [] },
+  { "type": "error", "name": "NotASigner", "inputs": [] },
+  { "type": "error", "name": "NotSelf", "inputs": [] },
+  { "type": "error", "name": "NotSigner", "inputs": [] },
+  { "type": "error", "name": "SignerCountBelowThreshold", "inputs": [] },
+  { "type": "error", "name": "ThresholdCannotBeZero", "inputs": [] },
+  { "type": "error", "name": "TransactionDoesNotExist", "inputs": [] },
+  { "type": "error", "name": "TransactionNotApproved", "inputs": [] },
+  { "type": "error", "name": "TransactionNotProposed", "inputs": [] },
+  {
+    "type": "error",
+    "name": "TransactionNotProposedOrApproved",
+    "inputs": []
   }
 ]

@@ -1,849 +1,913 @@
 [
   {
+    "type": "constructor",
     "inputs": [
       {
-        "internalType": "address",
         "name": "_paymentProcessorStorageAddress",
-        "type": "address"
+        "type": "address",
+        "internalType": "address"
       },
-      { "internalType": "address", "name": "_oracle", "type": "address" }
+      { "name": "_oracle", "type": "address", "internalType": "address" }
     ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  { "inputs": [], "name": "BuyerCannotBeSeller", "type": "error" },
-  { "inputs": [], "name": "DuplicateTask", "type": "error" },
-  { "inputs": [], "name": "EmptyMetaInvoice", "type": "error" },
-  { "inputs": [], "name": "EscrowWithdrawFailed", "type": "error" },
-  { "inputs": [], "name": "InsufficientBalance", "type": "error" },
-  { "inputs": [], "name": "InvalidDisputeResolution", "type": "error" },
-  { "inputs": [], "name": "InvalidInvoiceState", "type": "error" },
-  {
-    "inputs": [
-      { "internalType": "uint256", "name": "sent", "type": "uint256" },
-      { "internalType": "uint256", "name": "expected", "type": "uint256" }
-    ],
-    "name": "InvalidMetaInvoicePaymentAmount",
-    "type": "error"
-  },
-  { "inputs": [], "name": "InvalidNativePayment", "type": "error" },
-  { "inputs": [], "name": "InvalidPrice", "type": "error" },
-  { "inputs": [], "name": "InvalidSeller", "type": "error" },
-  { "inputs": [], "name": "InvalidSellersPayoutShare", "type": "error" },
-  { "inputs": [], "name": "InvoiceAlreadyExists", "type": "error" },
-  { "inputs": [], "name": "InvoiceDoesNotExist", "type": "error" },
-  { "inputs": [], "name": "InvoiceExpired", "type": "error" },
-  { "inputs": [], "name": "MetaInvoiceAlreadyExists", "type": "error" },
-  { "inputs": [], "name": "NotAuthorized", "type": "error" },
-  { "inputs": [], "name": "PriceCannotBeZero", "type": "error" },
-  { "inputs": [], "name": "PriceIsTooLow", "type": "error" },
-  { "inputs": [], "name": "Reentrancy", "type": "error" },
-  { "inputs": [], "name": "SequencerDown", "type": "error" },
-  { "inputs": [], "name": "StalePrice", "type": "error" },
-  { "inputs": [], "name": "StalePriceFeed", "type": "error" },
-  { "inputs": [], "name": "TaskNotFound", "type": "error" },
-  { "inputs": [], "name": "UnsupportedToken", "type": "error" },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      }
-    ],
-    "name": "DisputeCreated",
-    "type": "event"
+    "stateMutability": "nonpayable"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      }
-    ],
-    "name": "DisputeDismissed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      }
-    ],
-    "name": "DisputeResolved",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "sellerAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "buyerAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "DisputeSettled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "escrow",
-        "type": "address"
-      }
-    ],
-    "name": "EscrowCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      }
-    ],
-    "name": "InvoiceCanceled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint216",
-            "name": "invoiceNonce",
-            "type": "uint216"
-          },
-          { "internalType": "uint40", "name": "paidAt", "type": "uint40" },
-          { "internalType": "uint40", "name": "createdAt", "type": "uint40" },
-          { "internalType": "uint40", "name": "releaseAt", "type": "uint40" },
-          { "internalType": "uint40", "name": "expiresAt", "type": "uint40" },
-          { "internalType": "uint8", "name": "state", "type": "uint8" },
-          {
-            "internalType": "uint8",
-            "name": "withdrawalRetries",
-            "type": "uint8"
-          },
-          {
-            "internalType": "uint32",
-            "name": "escrowHoldPeriod",
-            "type": "uint32"
-          },
-          {
-            "internalType": "uint216",
-            "name": "metaInvoiceId",
-            "type": "uint216"
-          },
-          { "internalType": "address", "name": "buyer", "type": "address" },
-          { "internalType": "address", "name": "seller", "type": "address" },
-          { "internalType": "address", "name": "escrow", "type": "address" },
-          {
-            "internalType": "address",
-            "name": "paymentToken",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "amountPaid",
-            "type": "uint256"
-          },
-          { "internalType": "uint256", "name": "price", "type": "uint256" },
-          { "internalType": "uint256", "name": "balance", "type": "uint256" }
-        ],
-        "indexed": false,
-        "internalType": "struct IAdvancedPaymentProcessor.Invoice",
-        "name": "invoice",
-        "type": "tuple"
-      }
-    ],
-    "name": "InvoiceCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "paymentToken",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "escrowAddress",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint40",
-        "name": "releaseAt",
-        "type": "uint40"
-      }
-    ],
-    "name": "InvoicePaid",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "recipient",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "LockedPaymentRecovered",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "metaInvoiceId",
-        "type": "uint216"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "totalPrice",
-        "type": "uint256"
-      }
-    ],
-    "name": "MetaInvoiceCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "receiver",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "currency",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "sellerAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "PaymentReleased",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "Refunded",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "recipient",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "TransferFailed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "newHoldPeriod",
-        "type": "uint256"
-      }
-    ],
-    "name": "UpdateReleaseTime",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint216",
-        "name": "invoiceId",
-        "type": "uint216"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "recipient",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint8",
-        "name": "attempt",
-        "type": "uint8"
-      }
-    ],
-    "name": "WithdrawalRetried",
-    "type": "event"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "_token", "type": "address" }
-    ],
+    "type": "function",
     "name": "_getDecimals",
-    "outputs": [
-      { "internalType": "uint8", "name": "tokenDecimals", "type": "uint8" }
+    "inputs": [
+      { "name": "_token", "type": "address", "internalType": "address" }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "outputs": [
+      { "name": "tokenDecimals", "type": "uint8", "internalType": "uint8" }
+    ],
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" }
-    ],
+    "type": "function",
     "name": "cancelInvoice",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [{ "internalType": "bytes", "name": "", "type": "bytes" }],
+    "type": "function",
     "name": "checkUpkeep",
+    "inputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
     "outputs": [
-      { "internalType": "bool", "name": "upkeepNeeded", "type": "bool" },
-      { "internalType": "bytes", "name": "performData", "type": "bytes" }
+      { "name": "upkeepNeeded", "type": "bool", "internalType": "bool" },
+      { "name": "performData", "type": "bytes", "internalType": "bytes" }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "_seller", "type": "address" },
-      { "internalType": "address", "name": "_buyer", "type": "address" },
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" }
-    ],
+    "type": "function",
     "name": "computeSalt",
-    "outputs": [
-      { "internalType": "bytes32", "name": "salt", "type": "bytes32" }
+    "inputs": [
+      { "name": "_seller", "type": "address", "internalType": "address" },
+      { "name": "_buyer", "type": "address", "internalType": "address" },
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
     ],
-    "stateMutability": "pure",
-    "type": "function"
+    "outputs": [
+      { "name": "salt", "type": "bytes32", "internalType": "bytes32" }
+    ],
+    "stateMutability": "pure"
   },
   {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" }
-    ],
+    "type": "function",
     "name": "createDispute",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      {
-        "components": [
-          { "internalType": "string", "name": "invoiceId", "type": "string" },
-          { "internalType": "address", "name": "seller", "type": "address" },
-          { "internalType": "uint256", "name": "price", "type": "uint256" },
-          {
-            "internalType": "uint32",
-            "name": "escrowHoldPeriod",
-            "type": "uint32"
-          }
-        ],
-        "internalType": "struct IAdvancedPaymentProcessor.InvoiceCreationParam[]",
-        "name": "_param",
-        "type": "tuple[]"
-      }
-    ],
+    "type": "function",
     "name": "createMetaInvoice",
-    "outputs": [
-      { "internalType": "uint216", "name": "metaInvoiceId", "type": "uint216" }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
-        "components": [
-          { "internalType": "string", "name": "invoiceId", "type": "string" },
-          { "internalType": "address", "name": "seller", "type": "address" },
-          { "internalType": "uint256", "name": "price", "type": "uint256" },
-          {
-            "internalType": "uint32",
-            "name": "escrowHoldPeriod",
-            "type": "uint32"
-          }
-        ],
-        "internalType": "struct IAdvancedPaymentProcessor.InvoiceCreationParam",
         "name": "_param",
-        "type": "tuple"
-      }
-    ],
-    "name": "createSingleInvoice",
-    "outputs": [
-      { "internalType": "uint216", "name": "invoiceId", "type": "uint216" }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getForwarder",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "forwarderAddress",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" }
-    ],
-    "name": "getInvoice",
-    "outputs": [
-      {
+        "type": "tuple[]",
+        "internalType": "struct IAdvancedPaymentProcessor.InvoiceCreationParam[]",
         "components": [
+          { "name": "invoiceId", "type": "string", "internalType": "string" },
+          { "name": "seller", "type": "address", "internalType": "address" },
+          { "name": "price", "type": "uint256", "internalType": "uint256" },
           {
-            "internalType": "uint216",
-            "name": "invoiceNonce",
-            "type": "uint216"
-          },
-          { "internalType": "uint40", "name": "paidAt", "type": "uint40" },
-          { "internalType": "uint40", "name": "createdAt", "type": "uint40" },
-          { "internalType": "uint40", "name": "releaseAt", "type": "uint40" },
-          { "internalType": "uint40", "name": "expiresAt", "type": "uint40" },
-          { "internalType": "uint8", "name": "state", "type": "uint8" },
-          {
-            "internalType": "uint8",
-            "name": "withdrawalRetries",
-            "type": "uint8"
-          },
-          {
-            "internalType": "uint32",
             "name": "escrowHoldPeriod",
-            "type": "uint32"
-          },
-          {
-            "internalType": "uint216",
-            "name": "metaInvoiceId",
-            "type": "uint216"
-          },
-          { "internalType": "address", "name": "buyer", "type": "address" },
-          { "internalType": "address", "name": "seller", "type": "address" },
-          { "internalType": "address", "name": "escrow", "type": "address" },
-          {
-            "internalType": "address",
-            "name": "paymentToken",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "amountPaid",
-            "type": "uint256"
-          },
-          { "internalType": "uint256", "name": "price", "type": "uint256" },
-          { "internalType": "uint256", "name": "balance", "type": "uint256" }
-        ],
-        "internalType": "struct IAdvancedPaymentProcessor.Invoice",
-        "name": "i",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getItems",
-    "outputs": [
-      { "internalType": "uint216[]", "name": "items", "type": "uint216[]" }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "uint216", "name": "_metaInvoiceId", "type": "uint216" }
-    ],
-    "name": "getMetaInvoice",
-    "outputs": [
-      {
-        "components": [
-          { "internalType": "uint256", "name": "price", "type": "uint256" },
-          {
-            "internalType": "uint216[]",
-            "name": "subInvoiceIds",
-            "type": "uint216[]"
+            "type": "uint32",
+            "internalType": "uint32"
           }
-        ],
-        "internalType": "struct IAdvancedPaymentProcessor.MetaInvoice",
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "metaInvoiceId",
+        "type": "uint216",
+        "internalType": "uint216"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createSingleInvoice",
+    "inputs": [
+      {
+        "name": "_param",
+        "type": "tuple",
+        "internalType": "struct IAdvancedPaymentProcessor.InvoiceCreationParam",
+        "components": [
+          { "name": "invoiceId", "type": "string", "internalType": "string" },
+          { "name": "seller", "type": "address", "internalType": "address" },
+          { "name": "price", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "escrowHoldPeriod",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      { "name": "invoiceId", "type": "uint216", "internalType": "uint216" }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getForwarder",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "forwarderAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getInvoice",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
+    ],
+    "outputs": [
+      {
+        "name": "i",
+        "type": "tuple",
+        "internalType": "struct IAdvancedPaymentProcessor.Invoice",
+        "components": [
+          {
+            "name": "invoiceNonce",
+            "type": "uint216",
+            "internalType": "uint216"
+          },
+          { "name": "paidAt", "type": "uint40", "internalType": "uint40" },
+          { "name": "createdAt", "type": "uint40", "internalType": "uint40" },
+          { "name": "releaseAt", "type": "uint40", "internalType": "uint40" },
+          { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
+          { "name": "state", "type": "uint8", "internalType": "uint8" },
+          {
+            "name": "withdrawalRetries",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "escrowHoldPeriod",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "metaInvoiceId",
+            "type": "uint216",
+            "internalType": "uint216"
+          },
+          { "name": "buyer", "type": "address", "internalType": "address" },
+          { "name": "seller", "type": "address", "internalType": "address" },
+          { "name": "escrow", "type": "address", "internalType": "address" },
+          {
+            "name": "paymentToken",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amountPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          { "name": "price", "type": "uint256", "internalType": "uint256" },
+          { "name": "balance", "type": "uint256", "internalType": "uint256" }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getItems",
+    "inputs": [],
+    "outputs": [
+      { "name": "items", "type": "uint216[]", "internalType": "uint216[]" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getMetaInvoice",
+    "inputs": [
+      {
+        "name": "_metaInvoiceId",
+        "type": "uint216",
+        "internalType": "uint216"
+      }
+    ],
+    "outputs": [
+      {
         "name": "m",
-        "type": "tuple"
+        "type": "tuple",
+        "internalType": "struct IAdvancedPaymentProcessor.MetaInvoice",
+        "components": [
+          { "name": "price", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "subInvoiceIds",
+            "type": "uint216[]",
+            "internalType": "uint216[]"
+          }
+        ]
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "getMinimumPrice",
+    "inputs": [],
     "outputs": [
       {
-        "internalType": "uint256",
         "name": "currentMinimumPrice",
-        "type": "uint256"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "getNextInvoiceNonce",
+    "inputs": [],
     "outputs": [
       {
-        "internalType": "uint216",
         "name": "nextInvoiceNonce",
-        "type": "uint216"
+        "type": "uint216",
+        "internalType": "uint216"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "getNextMetaInvoiceNonce",
+    "inputs": [],
     "outputs": [
       {
-        "internalType": "uint216",
         "name": "nextMetaInvoiceId",
-        "type": "uint216"
+        "type": "uint216",
+        "internalType": "uint216"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      { "internalType": "bytes32", "name": "_salt", "type": "bytes32" }
-    ],
+    "type": "function",
     "name": "getPredictedAddress",
+    "inputs": [
+      { "name": "_salt", "type": "bytes32", "internalType": "bytes32" },
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
+    ],
     "outputs": [
       {
-        "internalType": "address",
         "name": "predictedAddress",
-        "type": "address"
+        "type": "address",
+        "internalType": "address"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "_paymentToken", "type": "address" },
-      { "internalType": "uint256", "name": "_usdAmount", "type": "uint256" }
-    ],
+    "type": "function",
     "name": "getTokenValueFromUsd",
-    "outputs": [
-      { "internalType": "uint256", "name": "tokenValue", "type": "uint256" }
+    "inputs": [
+      {
+        "name": "_paymentToken",
+        "type": "address",
+        "internalType": "address"
+      },
+      { "name": "_usdAmount", "type": "uint256", "internalType": "uint256" }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "outputs": [
+      { "name": "tokenValue", "type": "uint256", "internalType": "uint256" }
+    ],
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" },
-      { "internalType": "uint8", "name": "_resolution", "type": "uint8" },
-      { "internalType": "uint256", "name": "_sellerShare", "type": "uint256" }
-    ],
+    "type": "function",
     "name": "handleDispute",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
+      { "name": "_resolution", "type": "uint8", "internalType": "uint8" },
+      { "name": "_sellerShare", "type": "uint256", "internalType": "uint256" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "oracle",
+    "inputs": [],
     "outputs": [
       {
-        "internalType": "contract IOracleManager",
         "name": "",
-        "type": "address"
+        "type": "address",
+        "internalType": "contract IOracleManager"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" },
-      { "internalType": "address", "name": "_paymentToken", "type": "address" }
-    ],
+    "type": "function",
     "name": "payInvoice",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
+      {
+        "name": "_paymentToken",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
+    "stateMutability": "payable"
   },
   {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" },
-      { "internalType": "address", "name": "_paymentToken", "type": "address" }
-    ],
+    "type": "function",
     "name": "payMetaInvoice",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
+      {
+        "name": "_paymentToken",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" }
-    ],
+    "type": "function",
     "name": "payMetaInvoiceWithValue",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
+    ],
     "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
+    "stateMutability": "payable"
   },
   {
-    "inputs": [{ "internalType": "bytes", "name": "", "type": "bytes" }],
+    "type": "function",
     "name": "performUpkeep",
+    "inputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "ppStorage",
+    "inputs": [],
     "outputs": [
       {
-        "internalType": "contract IPaymentProcessorStorage",
         "name": "",
-        "type": "address"
+        "type": "address",
+        "internalType": "contract IPaymentProcessorStorage"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" },
-      { "internalType": "uint256", "name": "_refundShare", "type": "uint256" }
-    ],
+    "type": "function",
     "name": "refund",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
+      { "name": "_refundShare", "type": "uint256", "internalType": "uint256" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" }
-    ],
+    "type": "function",
     "name": "release",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" },
-      { "internalType": "address", "name": "_recipient", "type": "address" },
-      { "internalType": "uint256", "name": "_amount", "type": "uint256" }
-    ],
+    "type": "function",
     "name": "releaseLocked",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
+      { "name": "_recipient", "type": "address", "internalType": "address" },
+      { "name": "_amount", "type": "uint256", "internalType": "uint256" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" }
-    ],
+    "type": "function",
     "name": "resolveDispute",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_forwarderAddress",
-        "type": "address"
-      }
-    ],
+    "type": "function",
     "name": "setForwarderAddress",
+    "inputs": [
+      {
+        "name": "_forwarderAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      { "internalType": "uint216", "name": "_invoiceId", "type": "uint216" },
-      { "internalType": "uint256", "name": "_holdPeriod", "type": "uint256" }
-    ],
+    "type": "function",
     "name": "setInvoiceReleaseTime",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
+      { "name": "_holdPeriod", "type": "uint256", "internalType": "uint256" }
+    ],
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
+    "type": "function",
+    "name": "setMinimumPrice",
     "inputs": [
       {
-        "internalType": "uint256",
         "name": "_newMinimumPrice",
-        "type": "uint256"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
-    "name": "setMinimumPrice",
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [],
+    "type": "function",
+    "name": "setOracle",
+    "inputs": [
+      { "name": "_oracle", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "totalMetaInvoiceCreated",
+    "inputs": [],
     "outputs": [
       {
-        "internalType": "uint216",
         "name": "totalMetaInvoices",
-        "type": "uint216"
+        "type": "uint216",
+        "internalType": "uint216"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "totalUniqueInvoiceCreated",
+    "inputs": [],
     "outputs": [
-      { "internalType": "uint216", "name": "totalInvoices", "type": "uint216" }
+      {
+        "name": "totalInvoices",
+        "type": "uint216",
+        "internalType": "uint216"
+      }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  }
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "DisputeCreated",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DisputeDismissed",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DisputeResolved",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DisputeSettled",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "sellerAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "buyerAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EscrowCreated",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "escrow",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "InvoiceCanceled",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "InvoiceCreated",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "invoice",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct IAdvancedPaymentProcessor.Invoice",
+        "components": [
+          {
+            "name": "invoiceNonce",
+            "type": "uint216",
+            "internalType": "uint216"
+          },
+          { "name": "paidAt", "type": "uint40", "internalType": "uint40" },
+          { "name": "createdAt", "type": "uint40", "internalType": "uint40" },
+          { "name": "releaseAt", "type": "uint40", "internalType": "uint40" },
+          { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
+          { "name": "state", "type": "uint8", "internalType": "uint8" },
+          {
+            "name": "withdrawalRetries",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "escrowHoldPeriod",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "metaInvoiceId",
+            "type": "uint216",
+            "internalType": "uint216"
+          },
+          { "name": "buyer", "type": "address", "internalType": "address" },
+          { "name": "seller", "type": "address", "internalType": "address" },
+          { "name": "escrow", "type": "address", "internalType": "address" },
+          {
+            "name": "paymentToken",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amountPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          { "name": "price", "type": "uint256", "internalType": "uint256" },
+          { "name": "balance", "type": "uint256", "internalType": "uint256" }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "InvoicePaid",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "paymentToken",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "escrowAddress",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "releaseAt",
+        "type": "uint40",
+        "indexed": false,
+        "internalType": "uint40"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LockedPaymentRecovered",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MetaInvoiceCreated",
+    "inputs": [
+      {
+        "name": "metaInvoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "totalPrice",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OracleUpdated",
+    "inputs": [
+      {
+        "name": "previousOracle",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOracle",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PaymentReleased",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "receiver",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "currency",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "sellerAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Refunded",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TransferFailed",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "UpdateReleaseTime",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "newHoldPeriod",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "WithdrawalRetried",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "attempt",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "uint8"
+      }
+    ],
+    "anonymous": false
+  },
+  { "type": "error", "name": "BuyerCannotBeSeller", "inputs": [] },
+  { "type": "error", "name": "Create2EmptyBytecode", "inputs": [] },
+  { "type": "error", "name": "DuplicateTask", "inputs": [] },
+  { "type": "error", "name": "EmptyMetaInvoice", "inputs": [] },
+  { "type": "error", "name": "EscrowWithdrawFailed", "inputs": [] },
+  { "type": "error", "name": "FailedDeployment", "inputs": [] },
+  {
+    "type": "error",
+    "name": "InsufficientBalance",
+    "inputs": [
+      { "name": "balance", "type": "uint256", "internalType": "uint256" },
+      { "name": "needed", "type": "uint256", "internalType": "uint256" }
+    ]
+  },
+  { "type": "error", "name": "InsufficientBalance", "inputs": [] },
+  { "type": "error", "name": "InvalidDisputeResolution", "inputs": [] },
+  { "type": "error", "name": "InvalidInvoiceState", "inputs": [] },
+  {
+    "type": "error",
+    "name": "InvalidMetaInvoicePaymentAmount",
+    "inputs": [
+      { "name": "sent", "type": "uint256", "internalType": "uint256" },
+      { "name": "expected", "type": "uint256", "internalType": "uint256" }
+    ]
+  },
+  { "type": "error", "name": "InvalidNativePayment", "inputs": [] },
+  { "type": "error", "name": "InvalidOracle", "inputs": [] },
+  { "type": "error", "name": "InvalidPrice", "inputs": [] },
+  { "type": "error", "name": "InvalidSeller", "inputs": [] },
+  { "type": "error", "name": "InvalidSellersPayoutShare", "inputs": [] },
+  { "type": "error", "name": "InvoiceAlreadyExists", "inputs": [] },
+  { "type": "error", "name": "InvoiceDoesNotExist", "inputs": [] },
+  { "type": "error", "name": "InvoiceExpired", "inputs": [] },
+  { "type": "error", "name": "MetaInvoiceAlreadyExists", "inputs": [] },
+  { "type": "error", "name": "NotAuthorized", "inputs": [] },
+  { "type": "error", "name": "PriceCannotBeZero", "inputs": [] },
+  { "type": "error", "name": "PriceIsTooLow", "inputs": [] },
+  { "type": "error", "name": "Reentrancy", "inputs": [] },
+  { "type": "error", "name": "SequencerDown", "inputs": [] },
+  { "type": "error", "name": "StalePrice", "inputs": [] },
+  { "type": "error", "name": "StalePriceFeed", "inputs": [] },
+  { "type": "error", "name": "TaskNotFound", "inputs": [] },
+  { "type": "error", "name": "UnsupportedToken", "inputs": [] }
 ]
