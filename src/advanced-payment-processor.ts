@@ -171,6 +171,7 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   invoice.state = PAID;
   invoice.escrow = event.params.escrowAddress;
   invoice.paymentToken = token.id;
+  invoice.releaseAt = event.params.releaseAt;
   invoice.fee = getFee(amountPaid);
   invoice.lastActionTime = event.block.timestamp;
 
@@ -281,6 +282,7 @@ export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
+  invoice.releaseAt = event.block.timestamp.plus(event.params.newHoldPeriod);
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();

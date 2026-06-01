@@ -13,7 +13,7 @@ import {
   WithdrawalRetried as WithdrawalRetriedEvent,
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
 import { InvoiceEvent, SimplePaymentProcessor, User } from "../generated/schema";
-import { getFee } from "./util/storage";
+import { getDefaultHoldPeriod, getFee } from "./util/storage";
 
 const CREATED = "CREATED";
 const PAID = "PAID";
@@ -85,6 +85,7 @@ export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
+  invoice.releaseAt = event.params.releaseDueTimestamp;
   invoice.lastActionTime = event.block.timestamp;
   invoice.save();
   saveInvoiceEvent(event, id, UPDATE_HOLD_PERIOD);
@@ -116,6 +117,10 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
   invoice.fee = getFee(invoice.amountPaid!);
   invoice.state = ACCEPTED;
   invoice.lastActionTime = event.block.timestamp;
+
+  if (!invoice.releaseAt) {
+    invoice.releaseAt = event.block.timestamp.plus(getDefaultHoldPeriod());
+  }
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_ACCEPTED);

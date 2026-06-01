@@ -82,6 +82,7 @@ type SimplePaymentProcessor @entity {
   amountPaid: BigInt
   invalidateAt: BigInt
   expiresAt: BigInt
+  releaseAt: BigInt
   fee: BigInt
   contract: Bytes!
   events: [InvoiceEvent!]! @derivedFrom(field: "simpleInvoice")
@@ -101,6 +102,7 @@ type AdvancedPaymentProcessor @entity {
   escrow: Bytes
   balance: BigInt
   paymentToken: PaymentToken
+  releaseAt: BigInt
   amountReleased: BigInt
   amountRefunded: BigInt
   sellerAmountReceivedAfterDispute: BigInt
