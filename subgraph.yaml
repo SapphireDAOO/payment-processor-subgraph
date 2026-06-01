@@ -6,11 +6,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: SimplePaymentProcessor
-    network: base-sepolia
+    network: localhost
     source:
       abi: SimplePaymentProcessor
-      address: "0xd70c10c73a716f85d97b5619dadfb6b1b6b6a706"
-      startBlock: 40636475
+      address: "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+      startBlock: 0
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -50,11 +50,11 @@ dataSources:
       file: ./src/simple-payment-processor.ts
   - kind: ethereum
     name: AdvancedPaymentProcessor
-    network: base-sepolia
+    network: localhost
     source:
       abi: AdvancedPaymentProcessor
-      address: "0x792af6df4f32ac3b8c2745dee42f9e08090c0746"
-      startBlock: 40636475
+      address: "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+      startBlock: 0
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -63,7 +63,7 @@ dataSources:
         - AdvancedPaymentProcessor
         - MetaInvoice
         - InvoiceEvent
-        - AdminAction
+        - PaymentToken
       abis:
         - name: AdvancedPaymentProcessor
           file: ./abis/AdvancedPaymentProcessor.json
@@ -108,11 +108,11 @@ dataSources:
       file: ./src/advanced-payment-processor.ts
   - kind: ethereum
     name: Notes
-    network: base-sepolia
+    network: localhost
     source:
       abi: Notes
-      address: "0x8391a68c01834d252c1dff975a621e8f99020b65"
-      startBlock: 40636475
+      address: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+      startBlock: 0
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -131,11 +131,11 @@ dataSources:
       file: ./src/notes.ts
   - kind: ethereum
     name: MultiSig
-    network: base-sepolia
+    network: localhost
     source:
       abi: MultiSig
-      address: "0x331798ef8a2a46b6e6a5864ba7f03016b875f193"
-      startBlock: 40669962
+      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+      startBlock: 0
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -168,11 +168,11 @@ dataSources:
       file: ./src/multi-sig.ts
   - kind: ethereum
     name: OracleManager
-    network: base-sepolia
+    network: localhost
     source:
       abi: OracleManager
-      address: "0x0000000000000000000000000000000000000000"
-      startBlock: 40636475
+      address: "0x0165878A594ca255338adfa4d48449f69242Eb8F"
+      startBlock: 0
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
