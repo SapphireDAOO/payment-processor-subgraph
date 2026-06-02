@@ -3,6 +3,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "clean": "rm -rf build generated",
+    "prepare:localhost": "mustache config/localhost.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:base-sepolia": "mustache config/base-sepolia.json subgraph.template.yaml > subgraph.yaml",
     "codegen": "graph codegen",
     "build": "graph build",
     "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ payment-processor",
@@ -16,5 +18,8 @@
     "@graphprotocol/graph-cli": "0.93.1",
     "@graphprotocol/graph-ts": "0.36.0"
   },
-  "devDependencies": { "matchstick-as": "0.6.0" }
+  "devDependencies": {
+    "matchstick-as": "0.6.0",
+    "mustache": "^4.2.0"
+  }
 }

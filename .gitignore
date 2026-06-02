@@ -2,6 +2,9 @@
 build/
 generated/
 
+# Generated from subgraph.template.yaml via `npm run prepare:<network>`
+subgraph.yaml
+
 # Dependency directories
 node_modules/
 jspm_packages/

@@ -1,0 +1,23 @@
+{
+  "network": "base-sepolia",
+  "simplePaymentProcessor": {
+    "address": "0xd70c10c73a716f85d97b5619dadfb6b1b6b6a706",
+    "startBlock": 40636475
+  },
+  "advancedPaymentProcessor": {
+    "address": "0x792af6df4f32ac3b8c2745dee42f9e08090c0746",
+    "startBlock": 40636475
+  },
+  "notes": {
+    "address": "0x8391a68c01834d252c1dff975a621e8f99020b65",
+    "startBlock": 40636475
+  },
+  "multiSig": {
+    "address": "0x331798ef8a2a46b6e6a5864ba7f03016b875f193",
+    "startBlock": 40669962
+  },
+  "oracleManager": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 40636475
+  }
+}

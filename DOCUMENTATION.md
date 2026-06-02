@@ -1,5 +1,7 @@
 # Payment Processor Subgraph — Documentation
 
+This document covers the indexed data and how to query it. For setup, configuration, local development, and deployment, see **[README.md](README.md)**.
+
 ## Table of Contents
 
 1. [Overview](#1-overview)
@@ -8,8 +10,6 @@
 4. [Invoice State Machines](#4-invoice-state-machines)
 5. [Dashboard Metrics](#5-dashboard-metrics)
 6. [Example Queries](#6-example-queries)
-7. [Development Guide](#7-development-guide)
-8. [Deployment](#8-deployment)
 
 ---
 
@@ -743,100 +743,3 @@ Resolve the block number for the target timestamp off-chain (e.g. a block-by-tim
   }
 }
 ```
-
----
-
-## 7. Development Guide
-
-### Prerequisites
-
-- Node.js ≥ 18
-- `npm`
-- Docker (for a local Graph Node)
-
-### Setup
-
-```bash
-git clone <repo>
-cd payment-processor-subgraph
-npm install
-```
-
-### Workflow
-
-After any change to `schema.graphql` or an ABI, regenerate types before building:
-
-```bash
-npm run codegen   # regenerates generated/
-npm run build     # compiles .ts → .wasm
-```
-
-To wipe generated artifacts and rebuild from scratch:
-
-```bash
-npm run clean && npm run codegen && npm run build
-```
-
-### Local development with Docker
-
-`docker-compose.yml` runs Graph Node + IPFS + Postgres and points Graph Node at your host chain. The `ethereum` env is `localhost:http://host.docker.internal:8545` — `host.docker.internal` resolves to the host's `127.0.0.1:8545` (the only reliable way to reach the host chain from a container on macOS/Windows). The manifest's `network:` must match the key (`localhost`).
-
-```bash
-# 1. Start your local chain (Anvil/Hardhat) on 127.0.0.1:8545 and deploy contracts
-# 2. Start Graph Node + IPFS + Postgres
-docker compose up -d
-# 3. Create and deploy the subgraph
-npm run create-local
-npx graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 \
-  --version-label v0.0.1 payment-processor
-```
-
-Query at: `http://localhost:8000/subgraphs/name/payment-processor`
-
-> **Restarting the local chain invalidates Graph Node's indexed blocks** (block hashes change), which surfaces as a `Provider went backwards` warning and a stuck sync. After restarting Anvil/Hardhat, reset Graph Node too:
-> ```bash
-> docker compose down && rm -rf data && docker compose up -d
-> npm run create-local && npx graph deploy --node http://localhost:8020/ \
->   --ipfs http://localhost:5001 --version-label v0.0.1 payment-processor
-> ```
-> To avoid this, run Anvil with persisted state: `anvil --state ./anvil-state.json`.
-
-### Adding a new event handler
-
-1. Add the new entity fields to `schema.graphql` if needed.
-2. Add the event to the relevant `eventHandlers` block in `subgraph.yaml`.
-3. Run `npm run codegen` to update generated types.
-4. Write the handler function in the appropriate `src/*.ts` file (append an `InvoiceEvent`, update metrics as appropriate).
-5. Run `npm run build` to verify it compiles.
-
----
-
-## 8. Deployment
-
-### Deploy to The Graph Studio
-
-```bash
-# Authenticate (one-time)
-npx graph auth --studio <deploy-key>
-
-# Deploy
-npm run deploy
-```
-
-### Deploy with the full script
-
-```bash
-npm run deploy:full   # runs scripts/deploy-subgraph.sh
-```
-
-### Version the subgraph
-
-To publish non-interactively, pass `--version-label`:
-
-```bash
-npx graph deploy --node https://api.studio.thegraph.com/deploy/ payment-processor --version-label 0.07
-```
-
-### Update contract addresses, network, or start blocks
-
-Edit `source.address`, `source.startBlock`, and `network` for each data source in `subgraph.yaml`, then redeploy. Setting `startBlock` to the contract deployment block prevents unnecessary re-indexing of older history. For a non-local target, also update the `ethereum` network key in `docker-compose.yml` (local) or your Graph Node config to match `network:`.

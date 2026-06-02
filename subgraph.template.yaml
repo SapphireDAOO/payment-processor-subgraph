@@ -1,4 +1,4 @@
-specVersion: 1.0.0
+specVersion: 1.1.0
 indexerHints:
   prune: auto
 schema:
@@ -6,11 +6,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: SimplePaymentProcessor
-    network: localhost
+    network: {{network}}
     source:
       abi: SimplePaymentProcessor
-      address: "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
-      startBlock: 0
+      address: "{{simplePaymentProcessor.address}}"
+      startBlock: {{simplePaymentProcessor.startBlock}}
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -50,11 +50,11 @@ dataSources:
       file: ./src/simple-payment-processor.ts
   - kind: ethereum
     name: AdvancedPaymentProcessor
-    network: localhost
+    network: {{network}}
     source:
       abi: AdvancedPaymentProcessor
-      address: "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
-      startBlock: 0
+      address: "{{advancedPaymentProcessor.address}}"
+      startBlock: {{advancedPaymentProcessor.startBlock}}
     mapping:
       kind: ethereum
       apiVersion: 0.0.7
@@ -108,11 +108,11 @@ dataSources:
       file: ./src/advanced-payment-processor.ts
   - kind: ethereum
     name: Notes
-    network: localhost
+    network: {{network}}
     source:
       abi: Notes
-      address: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
-      startBlock: 0
+      address: "{{notes.address}}"
+      startBlock: {{notes.startBlock}}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -131,11 +131,11 @@ dataSources:
       file: ./src/notes.ts
   - kind: ethereum
     name: MultiSig
-    network: localhost
+    network: {{network}}
     source:
       abi: MultiSig
-      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
-      startBlock: 0
+      address: "{{multiSig.address}}"
+      startBlock: {{multiSig.startBlock}}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -168,11 +168,11 @@ dataSources:
       file: ./src/multi-sig.ts
   - kind: ethereum
     name: OracleManager
-    network: localhost
+    network: {{network}}
     source:
       abi: OracleManager
-      address: "0x0165878A594ca255338adfa4d48449f69242Eb8F"
-      startBlock: 0
+      address: "{{oracleManager.address}}"
+      startBlock: {{oracleManager.startBlock}}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
