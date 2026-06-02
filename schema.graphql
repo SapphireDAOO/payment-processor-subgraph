@@ -196,3 +196,46 @@ type MultiSigApproval @entity {
   approvalCount: BigInt!
   approvedAt: BigInt!
 }
+
+type MetricData @entity {
+  id: ID!
+  # Total Invoices Paid — currently-paid, unsettled count
+  paidInvoices: BigInt!
+  lastPaidInvoiceTimestamp: BigInt!
+  # Invoice Activity — daily transaction counts per processor (24h reset)
+  simpleTransactionCount: BigInt!
+  advancedTransactionCount: BigInt!
+  transactionCountLastUpdate: BigInt!
+  # User Metrics
+  newUsers: BigInt!
+  activeUsers: BigInt!
+  activeUsersLastUpdate: BigInt!
+  # Per-token volume / escrow / fees (one entry per supported token)
+  tokenData: [TokenMetric!]! @derivedFrom(field: "metric")
+}
+
+type TokenMetric @entity {
+  id: ID! # token address (matches PaymentToken.id)
+  metric: MetricData!
+  token: PaymentToken!
+  volumeBalance: BigInt! # cumulative; never reversed on settlement
+  escrowBalance: BigInt! # live: += on Paid, -= on Refund/Disputed/Release
+  feeBalance: BigInt! # cumulative protocol fees collected
+}
+
+# Append-only recent transactions; query first: 5, orderBy timestamp desc.
+type RecentTransaction @entity(immutable: true) {
+  id: ID! # txHash + "-" + logIndex
+  transactionHash: Bytes!
+  timestamp: BigInt!
+  amount: BigInt! # positive for Paid, negative for Release
+  token: PaymentToken
+}
+
+# Gas Tracker — cumulative platform-wallet gas spend (id: "global")
+type GasPaid @entity {
+  id: ID!
+  amount: BigInt!
+  transactionCount: BigInt!
+  lastTimeStamp: BigInt!
+}

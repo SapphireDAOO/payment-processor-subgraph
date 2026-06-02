@@ -21,11 +21,21 @@ import {
   AdvancedPaymentProcessor,
   InvoiceEvent,
   MetaInvoice,
-  PaymentToken,
   User,
 } from "../generated/schema";
 import { getFee } from "./util/storage";
-import { getTokenData } from "./util/token";
+import {
+  ADVANCED,
+  addRecentTransaction,
+  getOrCreatePaymentToken,
+  recordActiveUser,
+  recordActivity,
+  recordFee,
+  recordGas,
+  recordNewUser,
+  recordPayment,
+  recordSettlement,
+} from "./util/metrics";
 
 const ZERO = BigInt.fromI32(0);
 const CREATED = "CREATED";
@@ -59,6 +69,7 @@ function getOrCreateUser(id: string): User {
 
   user = new User(id);
   user.save();
+  recordNewUser();
 
   return user;
 }
@@ -73,12 +84,15 @@ function saveProcessorEvent(event: ethereum.Event, eventType: string): void {
   invoiceEvent.txHash = event.transaction.hash;
   invoiceEvent.timestamp = event.block.timestamp;
   invoiceEvent.save();
+
+  recordGas(event);
 }
 
 function saveInvoiceEvent(
   event: ethereum.Event,
   invoiceId: string,
-  eventType: string
+  eventType: string,
+  trackGas: boolean,
 ): void {
   const invoiceEvent = new InvoiceEvent(eventId(event));
   invoiceEvent.eventType = eventType;
@@ -86,24 +100,37 @@ function saveInvoiceEvent(
   invoiceEvent.timestamp = event.block.timestamp;
   invoiceEvent.advancedInvoice = invoiceId;
   invoiceEvent.save();
+
+  recordActivity(ADVANCED, event.block.timestamp);
+  if (trackGas) {
+    recordGas(event);
+  }
 }
 
-function getOrCreatePaymentToken(tokenAddress: Address): PaymentToken {
-  const id = tokenAddress.toHex();
-  let token = PaymentToken.load(id);
-  if (token) return token;
+function invoiceToken(invoice: AdvancedPaymentProcessor): Address {
+  return invoice.paymentToken === null
+    ? Address.zero()
+    : Address.fromString(invoice.paymentToken!);
+}
 
-  const data = getTokenData(tokenAddress);
-  token = new PaymentToken(id);
-  token.name = data.name;
-  token.decimal = data.decimal;
-  token.save();
-
-  return token;
+function settleAdvanced(
+  invoice: AdvancedPaymentProcessor,
+  priorBalance: BigInt,
+  newBalance: BigInt,
+  escrowAmount: BigInt,
+  timestamp: BigInt,
+): void {
+  const decrementPaid = priorBalance.gt(ZERO) && newBalance.le(ZERO);
+  recordSettlement(
+    invoiceToken(invoice),
+    escrowAmount,
+    decrementPaid,
+    timestamp,
+  );
 }
 
 export function handleAdvancedPaymentProcessorCreated(
-  event: InvoiceCreatedEvent
+  event: InvoiceCreatedEvent,
 ): void {
   const id = event.params.invoiceId.toString();
   const invoiceNonce = event.params.invoice.invoiceNonce;
@@ -134,7 +161,7 @@ export function handleAdvancedPaymentProcessorCreated(
   }
 
   invoice.save();
-  saveInvoiceEvent(event, id, INVOICE_CREATED);
+  saveInvoiceEvent(event, id, INVOICE_CREATED, true);
 }
 
 export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
@@ -164,6 +191,7 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   getOrCreateUser(buyerId);
 
   const token = getOrCreatePaymentToken(event.params.paymentToken);
+  const fee = getFee(amountPaid);
 
   invoice.buyer = buyerId;
   invoice.amountPaid = amountPaid;
@@ -172,11 +200,16 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   invoice.escrow = event.params.escrowAddress;
   invoice.paymentToken = token.id;
   invoice.releaseAt = event.params.releaseAt;
-  invoice.fee = getFee(amountPaid);
+  invoice.fee = fee;
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
-  saveInvoiceEvent(event, id, INVOICE_PAID);
+  saveInvoiceEvent(event, id, INVOICE_PAID, false);
+
+  recordPayment(event.params.paymentToken, amountPaid, event.block.timestamp);
+  recordFee(event.params.paymentToken, fee);
+  recordActiveUser(event.block.timestamp);
+  addRecentTransaction(event, amountPaid, event.params.paymentToken);
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
@@ -188,7 +221,7 @@ export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
-  saveInvoiceEvent(event, id, INVOICE_CANCELED);
+  saveInvoiceEvent(event, id, INVOICE_CANCELED, true);
 }
 
 export function handleDisputeCreated(event: DisputeCreatedEvent): void {
@@ -200,7 +233,7 @@ export function handleDisputeCreated(event: DisputeCreatedEvent): void {
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
-  saveInvoiceEvent(event, id, DISPUTE_CREATED);
+  saveInvoiceEvent(event, id, DISPUTE_CREATED, true);
 }
 
 export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
@@ -212,7 +245,7 @@ export function handleDisputeDismissed(event: DisputeDismissedEvent): void {
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
-  saveInvoiceEvent(event, id, DISPUTE_DISMISSED_EVENT);
+  saveInvoiceEvent(event, id, DISPUTE_DISMISSED_EVENT, true);
 }
 
 export function handleDisputeResolved(event: DisputeResolvedEvent): void {
@@ -224,7 +257,7 @@ export function handleDisputeResolved(event: DisputeResolvedEvent): void {
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
-  saveInvoiceEvent(event, id, DISPUTE_RESOLVED_EVENT);
+  saveInvoiceEvent(event, id, DISPUTE_RESOLVED_EVENT, true);
 }
 
 export function handleDisputeSettled(event: DisputeSettledEvent): void {
@@ -232,15 +265,26 @@ export function handleDisputeSettled(event: DisputeSettledEvent): void {
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
+  const priorBalance = invoice.balance ? invoice.balance! : ZERO;
   invoice.state = DISPUTE_SETTLED;
   invoice.lastActionTime = event.block.timestamp;
+  invoice.balance = ZERO;
   invoice.amountReleased = event.params.sellerAmount;
   invoice.amountRefunded = event.params.buyerAmount;
   invoice.sellerAmountReceivedAfterDispute = event.params.sellerAmount;
   invoice.buyerAmountReceivedAfterDispute = event.params.buyerAmount;
 
   invoice.save();
-  saveInvoiceEvent(event, id, DISPUTE_SETTLED_EVENT);
+  saveInvoiceEvent(event, id, DISPUTE_SETTLED_EVENT, true);
+
+  // Full escrow is distributed between buyer and seller at settlement.
+  settleAdvanced(
+    invoice,
+    priorBalance,
+    ZERO,
+    priorBalance,
+    event.block.timestamp,
+  );
 }
 
 export function handleRefunded(event: RefundedEvent): void {
@@ -248,19 +292,32 @@ export function handleRefunded(event: RefundedEvent): void {
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
+  const priorBalance = invoice.balance ? invoice.balance! : ZERO;
   if (invoice.balance) {
     invoice.balance = invoice.balance!.minus(event.params.amount);
   }
+  const newBalance = invoice.balance ? invoice.balance! : ZERO;
 
   const state = REFUNDED;
-  const previousRefunded = invoice.amountRefunded ? invoice.amountRefunded! : ZERO;
+  const previousRefunded = invoice.amountRefunded
+    ? invoice.amountRefunded!
+    : ZERO;
 
   invoice.state = state;
   invoice.lastActionTime = event.block.timestamp;
   invoice.amountRefunded = previousRefunded.plus(event.params.amount);
 
   invoice.save();
-  saveInvoiceEvent(event, id, REFUNDED);
+  saveInvoiceEvent(event, id, REFUNDED, true);
+
+  // Only the refunded portion leaves escrow.
+  settleAdvanced(
+    invoice,
+    priorBalance,
+    newBalance,
+    event.params.amount,
+    event.block.timestamp,
+  );
 }
 
 export function handlePaymentReleased(event: PaymentReleasedEvent): void {
@@ -268,13 +325,24 @@ export function handlePaymentReleased(event: PaymentReleasedEvent): void {
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
+  const priorBalance = invoice.balance ? invoice.balance! : ZERO;
   invoice.state = RELEASED;
   invoice.lastActionTime = event.block.timestamp;
   invoice.balance = ZERO;
   invoice.amountReleased = event.params.sellerAmount;
 
   invoice.save();
-  saveInvoiceEvent(event, id, PAYMENT_RELEASED);
+  saveInvoiceEvent(event, id, PAYMENT_RELEASED, true);
+
+  // All remaining escrow is released to the seller.
+  settleAdvanced(
+    invoice,
+    priorBalance,
+    ZERO,
+    priorBalance,
+    event.block.timestamp,
+  );
+  addRecentTransaction(event, ZERO.minus(priorBalance), invoiceToken(invoice));
 }
 
 export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
@@ -286,7 +354,7 @@ export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
-  saveInvoiceEvent(event, id, UPDATE_RELEASE_TIME);
+  saveInvoiceEvent(event, id, UPDATE_RELEASE_TIME, true);
 }
 
 export function handleEscrowCreated(event: EscrowCreatedEvent): void {
@@ -297,11 +365,11 @@ export function handleEscrowCreated(event: EscrowCreatedEvent): void {
   invoice.escrow = event.params.escrow;
   invoice.lastActionTime = event.block.timestamp;
   invoice.save();
-  saveInvoiceEvent(event, id, ESCROW_CREATED);
+  saveInvoiceEvent(event, id, ESCROW_CREATED, true);
 }
 
 export function handleLockedPaymentRecovered(
-  event: LockedPaymentRecoveredEvent
+  event: LockedPaymentRecoveredEvent,
 ): void {
   const id = event.params.invoiceId.toString();
   const invoice = AdvancedPaymentProcessor.load(id);
@@ -309,7 +377,7 @@ export function handleLockedPaymentRecovered(
 
   invoice.lastActionTime = event.block.timestamp;
   invoice.save();
-  saveInvoiceEvent(event, id, LOCKED_PAYMENT_RECOVERED);
+  saveInvoiceEvent(event, id, LOCKED_PAYMENT_RECOVERED, true);
 }
 
 export function handleOracleUpdated(event: OracleUpdatedEvent): void {
@@ -323,7 +391,7 @@ export function handleTransferFailed(event: TransferFailedEvent): void {
 
   invoice.lastActionTime = event.block.timestamp;
   invoice.save();
-  saveInvoiceEvent(event, id, TRANSFER_FAILED);
+  saveInvoiceEvent(event, id, TRANSFER_FAILED, true);
 }
 
 export function handleWithdrawalRetried(event: WithdrawalRetriedEvent): void {
@@ -333,5 +401,5 @@ export function handleWithdrawalRetried(event: WithdrawalRetriedEvent): void {
 
   invoice.lastActionTime = event.block.timestamp;
   invoice.save();
-  saveInvoiceEvent(event, id, WITHDRAWAL_RETRIED);
+  saveInvoiceEvent(event, id, WITHDRAWAL_RETRIED, true);
 }

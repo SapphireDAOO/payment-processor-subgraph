@@ -1,4 +1,4 @@
-import { BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import {
   InvoiceAccepted as InvoiceAcceptedEvent,
   InvoiceCanceled as InvoiceCanceledEvent,
@@ -14,6 +14,20 @@ import {
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
 import { InvoiceEvent, SimplePaymentProcessor, User } from "../generated/schema";
 import { getDefaultHoldPeriod, getFee } from "./util/storage";
+import {
+  addRecentTransaction,
+  recordActiveUser,
+  recordActivity,
+  recordFee,
+  recordNewUser,
+  recordPayment,
+  recordSettlement,
+  SIMPLE,
+} from "./util/metrics";
+
+// Simple invoices are settled in the native token (ETH).
+const ETH = Address.zero();
+const ZERO = BigInt.fromI32(0);
 
 const CREATED = "CREATED";
 const PAID = "PAID";
@@ -40,6 +54,7 @@ function getOrCreateUser(id: string): User {
 
   user = new User(id);
   user.save();
+  recordNewUser();
 
   return user;
 }
@@ -59,6 +74,23 @@ function saveInvoiceEvent(
   invoiceEvent.timestamp = event.block.timestamp;
   invoiceEvent.simpleInvoice = invoiceId;
   invoiceEvent.save();
+
+  recordActivity(SIMPLE, event.block.timestamp);
+}
+
+
+function isEscrowed(state: string): boolean {
+  return state == PAID || state == ACCEPTED;
+}
+
+
+function settleSimple(
+  invoice: SimplePaymentProcessor,
+  decrementPaid: boolean,
+  timestamp: BigInt
+): void {
+  if (invoice.amountPaid === null) return;
+  recordSettlement(ETH, invoice.amountPaid!, decrementPaid, timestamp);
 }
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
@@ -107,6 +139,10 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_PAID);
+
+  recordPayment(ETH, event.params.amountPaid, event.block.timestamp);
+  recordActiveUser(event.block.timestamp);
+  addRecentTransaction(event, event.params.amountPaid, ETH);
 }
 
 export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
@@ -114,7 +150,8 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
-  invoice.fee = getFee(invoice.amountPaid!);
+  const fee = getFee(invoice.amountPaid!);
+  invoice.fee = fee;
   invoice.state = ACCEPTED;
   invoice.lastActionTime = event.block.timestamp;
 
@@ -124,6 +161,8 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_ACCEPTED);
+
+  recordFee(ETH, fee);
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
@@ -143,11 +182,13 @@ export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
+  const wasPaid = isEscrowed(invoice.state);
   invoice.state = REFUNDED;
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_REFUNDED);
+  settleSimple(invoice, wasPaid, event.block.timestamp);
 }
 
 export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
@@ -155,11 +196,13 @@ export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
+  const wasPaid = isEscrowed(invoice.state);
   invoice.state = REJECTED;
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_REJECTED);
+  settleSimple(invoice, wasPaid, event.block.timestamp);
 }
 
 export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
@@ -167,11 +210,16 @@ export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
+  const wasPaid = isEscrowed(invoice.state);
   invoice.state = RELEASED;
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_RELEASED);
+  settleSimple(invoice, wasPaid, event.block.timestamp);
+  if (invoice.amountPaid !== null) {
+    addRecentTransaction(event, ZERO.minus(invoice.amountPaid!), ETH);
+  }
 }
 
 export function handleLockedPaymentRecovered(
