@@ -1,4 +1,4 @@
-import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { Address, ethereum } from "@graphprotocol/graph-ts";
 import {
   DisputeCreated as DisputeCreatedEvent,
   DisputeDismissed as DisputeDismissedEvent,
@@ -21,58 +21,47 @@ import {
   AdvancedPaymentProcessor,
   InvoiceEvent,
   MetaInvoice,
-  User,
 } from "../generated/schema";
 import { getFee } from "./util/storage";
 import {
-  ADVANCED,
-  addRecentTransaction,
   getOrCreatePaymentToken,
-  recordActiveUser,
-  recordActivity,
+  recordEscrowDelta,
   recordFee,
   recordGas,
-  recordNewUser,
-  recordPayment,
-  recordSettlement,
+  recordInvoiceActivity,
+  recordPaymentVolume,
 } from "./util/metrics";
-
-const ZERO = BigInt.fromI32(0);
-const CREATED = "CREATED";
-const PAID = "PAID";
-const CANCELED = "CANCELED";
-const DISPUTED = "DISPUTED";
-const DISPUTE_DISMISSED = "DISPUTE_DISMISSED";
-const DISPUTE_RESOLVED = "DISPUTE_RESOLVED";
-const DISPUTE_SETTLED = "DISPUTE_SETTLED";
-const REFUNDED = "REFUNDED";
-const RELEASED = "RELEASED";
-const DISPUTE_CREATED = "DISPUTE_CREATED";
-const DISPUTE_DISMISSED_EVENT = "DISPUTE_DISMISSED";
-const DISPUTE_RESOLVED_EVENT = "DISPUTE_RESOLVED";
-const DISPUTE_SETTLED_EVENT = "DISPUTE_SETTLED";
-const ESCROW_CREATED = "ESCROW_CREATED";
-const INVOICE_CANCELED = "INVOICE_CANCELED";
-const INVOICE_CREATED = "INVOICE_CREATED";
-const INVOICE_PAID = "INVOICE_PAID";
-const LOCKED_PAYMENT_RECOVERED = "LOCKED_PAYMENT_RECOVERED";
-const META_INVOICE_CREATED = "META_INVOICE_CREATED";
-const ORACLE_UPDATED = "ORACLE_UPDATED";
-const PAYMENT_RELEASED = "PAYMENT_RELEASED";
-const TRANSFER_FAILED = "TRANSFER_FAILED";
-const UPDATE_RELEASE_TIME = "UPDATE_RELEASE_TIME";
-const WITHDRAWAL_RETRIED = "WITHDRAWAL_RETRIED";
-
-function getOrCreateUser(id: string): User {
-  let user = User.load(id);
-  if (user) return user;
-
-  user = new User(id);
-  user.save();
-  recordNewUser();
-
-  return user;
-}
+import { trackUser } from "./util/user";
+import {
+  ADVANCED,
+  CANCELED,
+  CREATED,
+  CREATOR,
+  DISPUTE_CREATED,
+  DISPUTE_DISMISSED,
+  DISPUTE_DISMISSED_EVENT,
+  DISPUTE_RESOLVED,
+  DISPUTE_RESOLVED_EVENT,
+  DISPUTE_SETTLED,
+  DISPUTE_SETTLED_EVENT,
+  DISPUTED,
+  ESCROW_CREATED,
+  INVOICE_CANCELED,
+  INVOICE_CREATED,
+  INVOICE_PAID,
+  LOCKED_PAYMENT_RECOVERED,
+  META_INVOICE_CREATED,
+  ORACLE_UPDATED,
+  PAID,
+  PAYER,
+  PAYMENT_RELEASED,
+  REFUNDED,
+  RELEASED,
+  TRANSFER_FAILED,
+  UPDATE_RELEASE_TIME,
+  WITHDRAWAL_RETRIED,
+  ZERO,
+} from "./util/constants";
 
 function eventId(event: ethereum.Event): string {
   return event.transaction.hash.toHex() + "-" + event.logIndex.toString();
@@ -101,7 +90,7 @@ function saveInvoiceEvent(
   invoiceEvent.advancedInvoice = invoiceId;
   invoiceEvent.save();
 
-  recordActivity(ADVANCED, event.block.timestamp);
+  recordInvoiceActivity(ADVANCED);
   if (trackGas) {
     recordGas(event);
   }
@@ -111,22 +100,6 @@ function invoiceToken(invoice: AdvancedPaymentProcessor): Address {
   return invoice.paymentToken === null
     ? Address.zero()
     : Address.fromString(invoice.paymentToken!);
-}
-
-function settleAdvanced(
-  invoice: AdvancedPaymentProcessor,
-  priorBalance: BigInt,
-  newBalance: BigInt,
-  escrowAmount: BigInt,
-  timestamp: BigInt,
-): void {
-  const decrementPaid = priorBalance.gt(ZERO) && newBalance.le(ZERO);
-  recordSettlement(
-    invoiceToken(invoice),
-    escrowAmount,
-    decrementPaid,
-    timestamp,
-  );
 }
 
 export function handleAdvancedPaymentProcessorCreated(
@@ -140,8 +113,8 @@ export function handleAdvancedPaymentProcessorCreated(
   const buyerId = event.params.invoice.buyer.toHex();
   const sellerId = event.params.invoice.seller.toHex();
 
-  getOrCreateUser(buyerId);
-  getOrCreateUser(sellerId);
+  trackUser(event.params.invoice.buyer, PAYER, event.block.timestamp);
+  trackUser(event.params.invoice.seller, CREATOR, event.block.timestamp);
 
   invoice.buyer = buyerId;
   invoice.seller = sellerId;
@@ -169,7 +142,7 @@ export function handleMetaInvoiceCreated(event: MetaInvoiceCreatedEvent): void {
   const metaInvoice = new MetaInvoice(id);
 
   const buyerId = event.transaction.from.toHex();
-  getOrCreateUser(buyerId);
+  trackUser(event.transaction.from, PAYER, event.block.timestamp);
 
   metaInvoice.invoiceNonce = event.params.metaInvoiceId;
   metaInvoice.buyer = buyerId;
@@ -188,7 +161,7 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   const amountPaid = event.params.amount;
   const buyerId = event.transaction.from.toHex();
 
-  getOrCreateUser(buyerId);
+  trackUser(event.transaction.from, PAYER, event.block.timestamp);
 
   const token = getOrCreatePaymentToken(event.params.paymentToken);
   const fee = getFee(amountPaid);
@@ -206,10 +179,10 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_PAID, false);
 
-  recordPayment(event.params.paymentToken, amountPaid, event.block.timestamp);
+  // Funds enter escrow on payment; protocol fee is collected at the same time.
+  recordPaymentVolume(event.params.paymentToken, amountPaid);
+  recordEscrowDelta(event.params.paymentToken, amountPaid);
   recordFee(event.params.paymentToken, fee);
-  recordActiveUser(event.block.timestamp);
-  addRecentTransaction(event, amountPaid, event.params.paymentToken);
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
@@ -278,13 +251,7 @@ export function handleDisputeSettled(event: DisputeSettledEvent): void {
   saveInvoiceEvent(event, id, DISPUTE_SETTLED_EVENT, true);
 
   // Full escrow is distributed between buyer and seller at settlement.
-  settleAdvanced(
-    invoice,
-    priorBalance,
-    ZERO,
-    priorBalance,
-    event.block.timestamp,
-  );
+  recordEscrowDelta(invoiceToken(invoice), ZERO.minus(priorBalance));
 }
 
 export function handleRefunded(event: RefundedEvent): void {
@@ -292,18 +259,15 @@ export function handleRefunded(event: RefundedEvent): void {
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
-  const priorBalance = invoice.balance ? invoice.balance! : ZERO;
   if (invoice.balance) {
     invoice.balance = invoice.balance!.minus(event.params.amount);
   }
-  const newBalance = invoice.balance ? invoice.balance! : ZERO;
 
-  const state = REFUNDED;
   const previousRefunded = invoice.amountRefunded
     ? invoice.amountRefunded!
     : ZERO;
 
-  invoice.state = state;
+  invoice.state = REFUNDED;
   invoice.lastActionTime = event.block.timestamp;
   invoice.amountRefunded = previousRefunded.plus(event.params.amount);
 
@@ -311,13 +275,7 @@ export function handleRefunded(event: RefundedEvent): void {
   saveInvoiceEvent(event, id, REFUNDED, true);
 
   // Only the refunded portion leaves escrow.
-  settleAdvanced(
-    invoice,
-    priorBalance,
-    newBalance,
-    event.params.amount,
-    event.block.timestamp,
-  );
+  recordEscrowDelta(invoiceToken(invoice), ZERO.minus(event.params.amount));
 }
 
 export function handlePaymentReleased(event: PaymentReleasedEvent): void {
@@ -335,14 +293,7 @@ export function handlePaymentReleased(event: PaymentReleasedEvent): void {
   saveInvoiceEvent(event, id, PAYMENT_RELEASED, true);
 
   // All remaining escrow is released to the seller.
-  settleAdvanced(
-    invoice,
-    priorBalance,
-    ZERO,
-    priorBalance,
-    event.block.timestamp,
-  );
-  addRecentTransaction(event, ZERO.minus(priorBalance), invoiceToken(invoice));
+  recordEscrowDelta(invoiceToken(invoice), ZERO.minus(priorBalance));
 }
 
 export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {

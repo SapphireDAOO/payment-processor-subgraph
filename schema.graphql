@@ -51,6 +51,16 @@ enum MultisigStatus {
   EXECUTED
 }
 
+enum InvoiceType {
+  SIMPLE
+  ADVANCED
+}
+
+enum UserRole {
+  CREATOR
+  PAYER
+}
+
 type InvoiceEvent @entity(immutable: true) {
   id: ID!
   eventType: PaymentProcessorEventType!
@@ -60,8 +70,11 @@ type InvoiceEvent @entity(immutable: true) {
   advancedInvoice: AdvancedPaymentProcessor
 }
 
-type User @entity {
+type User @entity(immutable: false) {
   id: ID!
+  # UTC day index (timestamp / 86400) of the user's most recent observed
+  # activity; used to emit at most one ActiveUser point per user per day.
+  lastActiveDay: BigInt
   ownedSimpleInvoices: [SimplePaymentProcessor!]! @derivedFrom(field: "seller")
   paidSimpleInvoices: [SimplePaymentProcessor!]! @derivedFrom(field: "buyer")
   issuedAdvancedInvoices: [AdvancedPaymentProcessor!]!
@@ -72,7 +85,7 @@ type User @entity {
 }
 
 # commission url is
-type SimplePaymentProcessor @entity {
+type SimplePaymentProcessor @entity(immutable: false) {
   id: ID!
   invoiceNonce: BigInt!
   state: SimplePaymentProcessorState!
@@ -92,7 +105,7 @@ type SimplePaymentProcessor @entity {
 }
 
 # commission url is either in release or dispute
-type AdvancedPaymentProcessor @entity {
+type AdvancedPaymentProcessor @entity(immutable: false) {
   id: ID!
   invoiceNonce: BigInt!
   state: AdvancedPaymentProcessorState!
@@ -117,7 +130,7 @@ type AdvancedPaymentProcessor @entity {
   sellerNote: String
 }
 
-type MetaInvoice @entity {
+type MetaInvoice @entity(immutable: false) {
   id: ID!
   invoiceNonce: BigInt!
   buyer: User!
@@ -126,7 +139,7 @@ type MetaInvoice @entity {
   invoices: [AdvancedPaymentProcessor!]! @derivedFrom(field: "metaInvoice")
 }
 
-type PaymentToken @entity {
+type PaymentToken @entity(immutable: false) {
   id: ID!
   name: String
   decimal: Int
@@ -143,7 +156,7 @@ type Note @entity(immutable: true) {
   createdAtTx: Bytes!
 }
 
-type NoteOpenState @entity {
+type NoteOpenState @entity(immutable: false) {
   id: ID!
   invoiceId: BigInt!
   noteId: BigInt!
@@ -153,7 +166,7 @@ type NoteOpenState @entity {
   updatedAtTx: Bytes!
 }
 
-type MultiSigWallet @entity {
+type MultiSigWallet @entity(immutable: false) {
   id: ID! # contract address
   threshold: BigInt!
   signerCount: BigInt!
@@ -162,7 +175,7 @@ type MultiSigWallet @entity {
   transactions: [MultiSigTransaction!]! @derivedFrom(field: "wallet")
 }
 
-type MultiSigSigner @entity {
+type MultiSigSigner @entity(immutable: false) {
   id: ID! # wallet address + "-" + signer address
   wallet: MultiSigWallet!
   address: Bytes!
@@ -172,7 +185,7 @@ type MultiSigSigner @entity {
   approvals: [MultiSigApproval!]! @derivedFrom(field: "signer")
 }
 
-type MultiSigTransaction @entity {
+type MultiSigTransaction @entity(immutable: false) {
   id: Bytes! # txHash
   wallet: MultiSigWallet!
   target: Bytes!
@@ -188,7 +201,7 @@ type MultiSigTransaction @entity {
   approvals: [MultiSigApproval!]! @derivedFrom(field: "transaction")
 }
 
-type MultiSigApproval @entity {
+type MultiSigApproval @entity(immutable: false) {
   id: ID! # txHash + "-" + approver
   transaction: MultiSigTransaction!
   signer: MultiSigSigner
@@ -197,45 +210,98 @@ type MultiSigApproval @entity {
   approvedAt: BigInt!
 }
 
-type MetricData @entity {
-  id: ID!
-  # Total Invoices Paid — currently-paid, unsettled count
-  paidInvoices: BigInt!
-  lastPaidInvoiceTimestamp: BigInt!
-  # Invoice Activity — daily transaction counts per processor (24h reset)
-  simpleTransactionCount: BigInt!
-  advancedTransactionCount: BigInt!
-  transactionCountLastUpdate: BigInt!
-  # User Metrics
-  newUsers: BigInt!
-  activeUsers: BigInt!
-  activeUsersLastUpdate: BigInt!
-  # Per-token volume / escrow / fees (one entry per supported token)
-  tokenData: [TokenMetric!]! @derivedFrom(field: "metric")
-}
-
-type TokenMetric @entity {
-  id: ID! # token address (matches PaymentToken.id)
-  metric: MetricData!
-  token: PaymentToken!
-  volumeBalance: BigInt! # cumulative; never reversed on settlement
-  escrowBalance: BigInt! # live: += on Paid, -= on Refund/Disputed/Release
-  feeBalance: BigInt! # cumulative protocol fees collected
-}
-
-# Append-only recent transactions; query first: 5, orderBy timestamp desc.
-type RecentTransaction @entity(immutable: true) {
-  id: ID! # txHash + "-" + logIndex
-  transactionHash: Bytes!
-  timestamp: BigInt!
-  amount: BigInt! # positive for Paid, negative for Release
-  token: PaymentToken
-}
-
 # Gas Tracker — cumulative platform-wallet gas spend (id: "global")
-type GasPaid @entity {
+type GasPaid @entity(immutable: false) {
   id: ID!
   amount: BigInt!
   transactionCount: BigInt!
   lastTimeStamp: BigInt!
+}
+
+type PaymentVolume @entity(timeseries: true) {
+  id: Int8!
+  timestamp: Timestamp!
+  token: PaymentToken!
+  amount: BigInt!
+}
+
+type VolumeStats @aggregation(intervals: ["day"], source: "PaymentVolume") {
+  id: Int8!
+  timestamp: Timestamp!
+  token: PaymentToken!
+  dailyVolume: BigInt! @aggregate(fn: "sum", arg: "amount")
+  invoicePaid: BigInt! @aggregate(fn: "count", cumulative: true)
+}
+
+type EscrowBalance @entity(timeseries: true) {
+  id: Int8!
+  timestamp: Timestamp!
+  token: PaymentToken!
+  balance: BigInt!
+}
+
+type EscrowStat
+  @aggregation(intervals: ["hour", "day"], source: "EscrowBalance") {
+  id: Int8!
+  timestamp: Timestamp!
+  token: PaymentToken!
+  total: BigInt! @aggregate(fn: "sum", arg: "balance")
+}
+
+type FeePaid @entity(timeseries: true) {
+  id: Int8!
+  timestamp: Timestamp!
+  token: PaymentToken!
+  amount: BigInt!
+}
+
+type FeePaidStats @aggregation(intervals: ["day"], source: "FeePaid") {
+  id: Int8!
+  timestamp: Timestamp!
+  token: PaymentToken!
+  totalFeePaid: BigInt! @aggregate(fn: "sum", arg: "amount")
+}
+
+type InvoiceActivity @entity(timeseries: true) {
+  id: Int8!
+  timestamp: Timestamp!
+  invoiceType: InvoiceType!
+}
+
+type InvoiceActivityStats
+  @aggregation(intervals: ["day"], source: "InvoiceActivity") {
+  id: Int8!
+  timestamp: Timestamp!
+  invoiceType: InvoiceType!
+  totalActivity: BigInt! @aggregate(fn: "count", cumulative: true)
+}
+
+type NewUser @entity(timeseries: true) {
+  id: Int8!
+  timestamp: Timestamp!
+  user: Bytes!
+  role: UserRole!
+}
+
+type NewUserStats @aggregation(intervals: ["day"], source: "NewUser") {
+  id: Int8!
+  timestamp: Timestamp!
+  role: UserRole!
+  # Per-day additions (sum the last 7 buckets for the dashboard's 7-day figure).
+  newUsers: BigInt! @aggregate(fn: "count")
+  # Cumulative running total of new users by role.
+  totalUsers: BigInt! @aggregate(fn: "count", cumulative: true)
+}
+
+type ActiveUser @entity(timeseries: true) {
+  id: Int8!
+  timestamp: Timestamp!
+  user: Bytes!
+  role: UserRole!
+}
+
+type ActiveUserStats @aggregation(intervals: ["day"], source: "ActiveUser") {
+  id: Int8!
+  timestamp: Timestamp!
+  activeUsers: BigInt! @aggregate(fn: "count")
 }

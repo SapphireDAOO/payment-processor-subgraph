@@ -1,4 +1,4 @@
-import { Address, BigInt, Bytes } from "@graphprotocol/graph-ts";
+import { Address, Bytes } from "@graphprotocol/graph-ts";
 import {
   MultiSig,
   ApprovalAdded,
@@ -16,12 +16,13 @@ import {
   MultiSigTransaction,
   MultiSigWallet,
 } from "../generated/schema";
-
-const ZERO = BigInt.fromI32(0);
-const STATUS_PROPOSED = "PROPOSED";
-const STATUS_APPROVED = "APPROVED";
-const STATUS_CANCELED = "CANCELED";
-const STATUS_EXECUTED = "EXECUTED";
+import {
+  STATUS_APPROVED,
+  STATUS_CANCELED,
+  STATUS_EXECUTED,
+  STATUS_PROPOSED,
+  ZERO,
+} from "./util/constants";
 
 function getWalletId(address: Address): string {
   return address.toHexString();

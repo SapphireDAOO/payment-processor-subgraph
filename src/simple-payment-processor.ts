@@ -1,4 +1,4 @@
-import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { ethereum } from "@graphprotocol/graph-ts";
 import {
   InvoiceAccepted as InvoiceAcceptedEvent,
   InvoiceCanceled as InvoiceCanceledEvent,
@@ -12,52 +12,40 @@ import {
   UpdateHoldPeriod as UpdateHoldPeriodEvent,
   WithdrawalRetried as WithdrawalRetriedEvent,
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
-import { InvoiceEvent, SimplePaymentProcessor, User } from "../generated/schema";
+import { InvoiceEvent, SimplePaymentProcessor } from "../generated/schema";
 import { getDefaultHoldPeriod, getFee } from "./util/storage";
 import {
-  addRecentTransaction,
-  recordActiveUser,
-  recordActivity,
+  recordEscrowDelta,
   recordFee,
-  recordNewUser,
-  recordPayment,
-  recordSettlement,
-  SIMPLE,
+  recordInvoiceActivity,
+  recordPaymentVolume,
 } from "./util/metrics";
-
-// Simple invoices are settled in the native token (ETH).
-const ETH = Address.zero();
-const ZERO = BigInt.fromI32(0);
-
-const CREATED = "CREATED";
-const PAID = "PAID";
-const ACCEPTED = "ACCEPTED";
-const CANCELED = "CANCELED";
-const RELEASED = "RELEASED";
-const REJECTED = "REJECTED";
-const REFUNDED = "REFUNDED";
-const INVOICE_ACCEPTED = "INVOICE_ACCEPTED";
-const INVOICE_CANCELED = "INVOICE_CANCELED";
-const INVOICE_CREATED = "INVOICE_CREATED";
-const INVOICE_PAID = "INVOICE_PAID";
-const INVOICE_REFUNDED = "INVOICE_REFUNDED";
-const INVOICE_REJECTED = "INVOICE_REJECTED";
-const INVOICE_RELEASED = "INVOICE_RELEASED";
-const LOCKED_PAYMENT_RECOVERED = "LOCKED_PAYMENT_RECOVERED";
-const TRANSFER_FAILED = "TRANSFER_FAILED";
-const UPDATE_HOLD_PERIOD = "UPDATE_HOLD_PERIOD";
-const WITHDRAWAL_RETRIED = "WITHDRAWAL_RETRIED";
-
-function getOrCreateUser(id: string): User {
-  let user = User.load(id);
-  if (user) return user;
-
-  user = new User(id);
-  user.save();
-  recordNewUser();
-
-  return user;
-}
+import { trackUser } from "./util/user";
+import {
+  ACCEPTED,
+  CANCELED,
+  CREATED,
+  CREATOR,
+  ETH,
+  INVOICE_ACCEPTED,
+  INVOICE_CANCELED,
+  INVOICE_CREATED,
+  INVOICE_PAID,
+  INVOICE_REFUNDED,
+  INVOICE_REJECTED,
+  INVOICE_RELEASED,
+  LOCKED_PAYMENT_RECOVERED,
+  PAID,
+  PAYER,
+  REFUNDED,
+  REJECTED,
+  RELEASED,
+  SIMPLE,
+  TRANSFER_FAILED,
+  UPDATE_HOLD_PERIOD,
+  WITHDRAWAL_RETRIED,
+  ZERO,
+} from "./util/constants";
 
 function eventId(event: ethereum.Event): string {
   return event.transaction.hash.toHex() + "-" + event.logIndex.toString();
@@ -66,7 +54,7 @@ function eventId(event: ethereum.Event): string {
 function saveInvoiceEvent(
   event: ethereum.Event,
   invoiceId: string,
-  eventType: string
+  eventType: string,
 ): void {
   const invoiceEvent = new InvoiceEvent(eventId(event));
   invoiceEvent.eventType = eventType;
@@ -75,22 +63,19 @@ function saveInvoiceEvent(
   invoiceEvent.simpleInvoice = invoiceId;
   invoiceEvent.save();
 
-  recordActivity(SIMPLE, event.block.timestamp);
+  recordInvoiceActivity(SIMPLE);
 }
-
 
 function isEscrowed(state: string): boolean {
   return state == PAID || state == ACCEPTED;
 }
 
-
-function settleSimple(
+function reverseEscrow(
   invoice: SimplePaymentProcessor,
-  decrementPaid: boolean,
-  timestamp: BigInt
+  wasEscrowed: boolean,
 ): void {
-  if (invoice.amountPaid === null) return;
-  recordSettlement(ETH, invoice.amountPaid!, decrementPaid, timestamp);
+  if (!wasEscrowed || invoice.amountPaid === null) return;
+  recordEscrowDelta(ETH, ZERO.minus(invoice.amountPaid!));
 }
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
@@ -98,7 +83,7 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   const invoice = new SimplePaymentProcessor(id);
 
   const sellerId = event.params.invoice.seller.toHex();
-  getOrCreateUser(sellerId);
+  trackUser(event.params.invoice.seller, CREATOR, event.block.timestamp);
 
   invoice.invoiceNonce = event.params.invoice.invoiceNonce;
   invoice.seller = sellerId;
@@ -129,7 +114,7 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
   if (!invoice) return;
 
   const buyerId = event.params.buyer.toHex();
-  getOrCreateUser(buyerId);
+  trackUser(event.params.buyer, PAYER, event.block.timestamp);
 
   invoice.buyer = buyerId;
   invoice.state = PAID;
@@ -140,9 +125,9 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_PAID);
 
-  recordPayment(ETH, event.params.amountPaid, event.block.timestamp);
-  recordActiveUser(event.block.timestamp);
-  addRecentTransaction(event, event.params.amountPaid, ETH);
+  // Funds enter native-token escrow on payment.
+  recordPaymentVolume(ETH, event.params.amountPaid);
+  recordEscrowDelta(ETH, event.params.amountPaid);
 }
 
 export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
@@ -182,13 +167,13 @@ export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
-  const wasPaid = isEscrowed(invoice.state);
+  const wasEscrowed = isEscrowed(invoice.state);
   invoice.state = REFUNDED;
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_REFUNDED);
-  settleSimple(invoice, wasPaid, event.block.timestamp);
+  reverseEscrow(invoice, wasEscrowed);
 }
 
 export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
@@ -196,13 +181,13 @@ export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
-  const wasPaid = isEscrowed(invoice.state);
+  const wasEscrowed = isEscrowed(invoice.state);
   invoice.state = REJECTED;
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_REJECTED);
-  settleSimple(invoice, wasPaid, event.block.timestamp);
+  reverseEscrow(invoice, wasEscrowed);
 }
 
 export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
@@ -210,20 +195,17 @@ export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
-  const wasPaid = isEscrowed(invoice.state);
+  const wasEscrowed = isEscrowed(invoice.state);
   invoice.state = RELEASED;
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_RELEASED);
-  settleSimple(invoice, wasPaid, event.block.timestamp);
-  if (invoice.amountPaid !== null) {
-    addRecentTransaction(event, ZERO.minus(invoice.amountPaid!), ETH);
-  }
+  reverseEscrow(invoice, wasEscrowed);
 }
 
 export function handleLockedPaymentRecovered(
-  event: LockedPaymentRecoveredEvent
+  event: LockedPaymentRecoveredEvent,
 ): void {
   const id = event.params.invoiceId.toString();
   const invoice = SimplePaymentProcessor.load(id);
