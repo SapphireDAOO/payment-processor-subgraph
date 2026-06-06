@@ -99,8 +99,8 @@ export function handlePaymentValidityDurationUpdated(
   config.save();
 }
 
-// Hold period and fee are read from the StorageConfiguration singleton, which is
-// kept current by this data source's config event handlers. Both return zero
+// The default hold period is read from the StorageConfiguration singleton, which
+// is kept current by this data source's config event handlers. Returns zero
 // until the relevant config event has been indexed.
 export function getDefaultHoldPeriod(): BigInt {
   const config = StorageConfiguration.load(GLOBAL);
@@ -108,13 +108,4 @@ export function getDefaultHoldPeriod(): BigInt {
     return BigInt.zero();
   }
   return config.defaultHoldPeriod!;
-}
-
-export function getFee(amount: BigInt): BigInt {
-  const config = StorageConfiguration.load(GLOBAL);
-  if (config == null || config.feeRate === null) {
-    return BigInt.zero();
-  }
-  const denominator = BigInt.fromI32(10_000);
-  return amount.times(config.feeRate!).div(denominator);
 }

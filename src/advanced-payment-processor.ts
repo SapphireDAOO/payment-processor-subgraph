@@ -21,7 +21,6 @@ import {
   InvoiceEvent,
   MetaInvoice,
 } from "../generated/schema";
-import { getFee } from "./payment-processor-storage";
 import {
   getOrCreatePaymentToken,
   recordEscrowDelta,
@@ -160,7 +159,6 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   trackUser(event.transaction.from, PAYER, event.block.timestamp);
 
   const token = getOrCreatePaymentToken(event.params.paymentToken);
-  const fee = getFee(amountPaid);
 
   invoice.buyer = buyerId;
   invoice.amountPaid = amountPaid;
@@ -169,18 +167,15 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   invoice.escrow = event.params.escrowAddress;
   invoice.paymentToken = token.id;
   invoice.releaseAt = event.params.releaseAt;
-  invoice.fee = fee;
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_PAID, false);
 
-  // Funds enter escrow on payment; protocol fee is collected at the same time.
+  // Funds enter escrow on payment; the protocol fee is collected later, at
+  // release or dispute settlement.
   recordPaymentVolume(event.params.paymentToken, amountPaid);
   recordEscrowDelta(event.params.paymentToken, amountPaid);
-
-  // fee is remove at release or dispute
-  recordFee(event.params.paymentToken, fee);
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
@@ -244,12 +239,15 @@ export function handleDisputeSettled(event: DisputeSettledEvent): void {
   invoice.amountRefunded = event.params.buyerAmount;
   invoice.sellerAmountReceivedAfterDispute = event.params.sellerAmount;
   invoice.buyerAmountReceivedAfterDispute = event.params.buyerAmount;
+  invoice.fee = event.params.fee;
 
   invoice.save();
   saveInvoiceEvent(event, id, DISPUTE_SETTLED_EVENT, true);
 
-  // Full escrow is distributed between buyer and seller at settlement.
+  // Full escrow is distributed between buyer and seller at settlement;
+  // the protocol fee is collected here.
   recordEscrowDelta(invoiceToken(invoice), ZERO.minus(priorBalance));
+  recordFee(invoiceToken(invoice), event.params.fee);
 }
 
 export function handleRefunded(event: RefundedEvent): void {
@@ -286,12 +284,15 @@ export function handlePaymentReleased(event: PaymentReleasedEvent): void {
   invoice.lastActionTime = event.block.timestamp;
   invoice.balance = ZERO;
   invoice.amountReleased = event.params.sellerAmount;
+  invoice.fee = event.params.fee;
 
   invoice.save();
   saveInvoiceEvent(event, id, PAYMENT_RELEASED, true);
 
-  // All remaining escrow is released to the seller.
+  // All remaining escrow is released to the seller; the protocol fee is
+  // collected here.
   recordEscrowDelta(invoiceToken(invoice), ZERO.minus(priorBalance));
+  recordFee(invoiceToken(invoice), event.params.fee);
 }
 
 export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {

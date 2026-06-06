@@ -13,7 +13,7 @@ import {
   WithdrawalRetried as WithdrawalRetriedEvent,
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
 import { InvoiceEvent, SimplePaymentProcessor } from "../generated/schema";
-import { getDefaultHoldPeriod, getFee } from "./payment-processor-storage";
+import { getDefaultHoldPeriod } from "./payment-processor-storage";
 import {
   recordEscrowDelta,
   recordFee,
@@ -135,8 +135,6 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
 
-  const fee = getFee(invoice.amountPaid!);
-  invoice.fee = fee;
   invoice.state = ACCEPTED;
   invoice.lastActionTime = event.block.timestamp;
 
@@ -146,9 +144,6 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_ACCEPTED);
-
-  // take this to release
-  recordFee(ETH, fee);
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
@@ -198,11 +193,15 @@ export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
 
   const wasEscrowed = isEscrowed(invoice.state);
   invoice.state = RELEASED;
+  invoice.fee = event.params.fee;
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_RELEASED);
   reverseEscrow(invoice, wasEscrowed);
+
+  // Protocol fee is collected when the payment is released to the seller.
+  recordFee(ETH, event.params.fee);
 }
 
 export function handleLockedPaymentRecovered(

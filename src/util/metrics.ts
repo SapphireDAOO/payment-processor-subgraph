@@ -45,10 +45,11 @@ export function recordEscrowDelta(tokenAddress: Address, delta: BigInt): void {
 
   const point = new EscrowBalance(TS_ID);
   point.token = token.id;
+  // Signed delta: summed into totalBalance to give the net escrow balance.
   point.balance = delta;
-  if (delta.gt(ZERO)) {
-    point.amountPaid = delta
-  }
+  // Only inbound deposits count as amount paid; withdrawals contribute zero so
+  // totalAmountPaid reflects the gross amount ever paid in.
+  point.amountPaid = delta.gt(ZERO) ? delta : ZERO;
   point.save();
 }
 
