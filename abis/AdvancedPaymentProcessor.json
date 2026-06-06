@@ -33,16 +33,6 @@
   },
   {
     "type": "function",
-    "name": "checkUpkeep",
-    "inputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
-    "outputs": [
-      { "name": "upkeepNeeded", "type": "bool", "internalType": "bool" },
-      { "name": "performData", "type": "bytes", "internalType": "bytes" }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "computeSalt",
     "inputs": [
       { "name": "_seller", "type": "address", "internalType": "address" },
@@ -119,19 +109,6 @@
   },
   {
     "type": "function",
-    "name": "getForwarder",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "forwarderAddress",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "getInvoice",
     "inputs": [
       { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
@@ -184,15 +161,6 @@
           { "name": "balance", "type": "uint256", "internalType": "uint256" }
         ]
       }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getItems",
-    "inputs": [],
-    "outputs": [
-      { "name": "items", "type": "uint216[]", "internalType": "uint216[]" }
     ],
     "stateMutability": "view"
   },
@@ -357,13 +325,6 @@
   },
   {
     "type": "function",
-    "name": "performUpkeep",
-    "inputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "ppStorage",
     "inputs": [],
     "outputs": [
@@ -396,33 +357,9 @@
   },
   {
     "type": "function",
-    "name": "releaseLocked",
-    "inputs": [
-      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
-      { "name": "_recipient", "type": "address", "internalType": "address" },
-      { "name": "_amount", "type": "uint256", "internalType": "uint256" }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "resolveDispute",
     "inputs": [
       { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setForwarderAddress",
-    "inputs": [
-      {
-        "name": "_forwarderAddress",
-        "type": "address",
-        "internalType": "address"
-      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -542,6 +479,12 @@
       },
       {
         "name": "buyerAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "fee",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -769,6 +712,12 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "fee",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -836,40 +785,8 @@
     ],
     "anonymous": false
   },
-  {
-    "type": "event",
-    "name": "WithdrawalRetried",
-    "inputs": [
-      {
-        "name": "invoiceId",
-        "type": "uint216",
-        "indexed": true,
-        "internalType": "uint216"
-      },
-      {
-        "name": "recipient",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "attempt",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      }
-    ],
-    "anonymous": false
-  },
   { "type": "error", "name": "BuyerCannotBeSeller", "inputs": [] },
   { "type": "error", "name": "Create2EmptyBytecode", "inputs": [] },
-  { "type": "error", "name": "DuplicateTask", "inputs": [] },
   { "type": "error", "name": "EmptyMetaInvoice", "inputs": [] },
   { "type": "error", "name": "EscrowWithdrawFailed", "inputs": [] },
   { "type": "error", "name": "FailedDeployment", "inputs": [] },
@@ -908,6 +825,5 @@
   { "type": "error", "name": "SequencerDown", "inputs": [] },
   { "type": "error", "name": "StalePrice", "inputs": [] },
   { "type": "error", "name": "StalePriceFeed", "inputs": [] },
-  { "type": "error", "name": "TaskNotFound", "inputs": [] },
   { "type": "error", "name": "UnsupportedToken", "inputs": [] }
 ]

@@ -15,14 +15,13 @@ import {
   Refunded as RefundedEvent,
   TransferFailed as TransferFailedEvent,
   UpdateReleaseTime as UpdateReleaseTimeEvent,
-  WithdrawalRetried as WithdrawalRetriedEvent,
 } from "../generated/AdvancedPaymentProcessor/AdvancedPaymentProcessor";
 import {
   AdvancedPaymentProcessor,
   InvoiceEvent,
   MetaInvoice,
 } from "../generated/schema";
-import { getFee } from "./util/storage";
+import { getFee } from "./payment-processor-storage";
 import {
   getOrCreatePaymentToken,
   recordEscrowDelta,
@@ -59,7 +58,6 @@ import {
   RELEASED,
   TRANSFER_FAILED,
   UPDATE_RELEASE_TIME,
-  WITHDRAWAL_RETRIED,
   ZERO,
 } from "./util/constants";
 
@@ -110,13 +108,11 @@ export function handleAdvancedPaymentProcessorCreated(
 
   const invoice = new AdvancedPaymentProcessor(id);
 
-  const buyerId = event.params.invoice.buyer.toHex();
+  //
   const sellerId = event.params.invoice.seller.toHex();
 
-  trackUser(event.params.invoice.buyer, PAYER, event.block.timestamp);
   trackUser(event.params.invoice.seller, CREATOR, event.block.timestamp);
 
-  invoice.buyer = buyerId;
   invoice.seller = sellerId;
   invoice.state = CREATED;
   invoice.price = event.params.invoice.price;
@@ -182,6 +178,8 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   // Funds enter escrow on payment; protocol fee is collected at the same time.
   recordPaymentVolume(event.params.paymentToken, amountPaid);
   recordEscrowDelta(event.params.paymentToken, amountPaid);
+
+  // fee is remove at release or dispute
   recordFee(event.params.paymentToken, fee);
 }
 
@@ -343,14 +341,4 @@ export function handleTransferFailed(event: TransferFailedEvent): void {
   invoice.lastActionTime = event.block.timestamp;
   invoice.save();
   saveInvoiceEvent(event, id, TRANSFER_FAILED, true);
-}
-
-export function handleWithdrawalRetried(event: WithdrawalRetriedEvent): void {
-  const id = event.params.invoiceId.toString();
-  const invoice = AdvancedPaymentProcessor.load(id);
-  if (!invoice) return;
-
-  invoice.lastActionTime = event.block.timestamp;
-  invoice.save();
-  saveInvoiceEvent(event, id, WITHDRAWAL_RETRIED, true);
 }

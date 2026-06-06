@@ -210,6 +210,31 @@ type MultiSigApproval @entity(immutable: false) {
   approvedAt: BigInt!
 }
 
+# Singleton (id: "global") mirroring the current PaymentProcessorStorage
+# configuration. Updated by every config-changing storage event.
+type StorageConfiguration @entity(immutable: false) {
+  id: ID!
+  owner: Bytes
+  feeRate: BigInt
+  feeReceiver: Bytes
+  defaultHoldPeriod: BigInt
+  marketplace: Bytes
+  gasThreshold: BigInt
+  paymentValidityDuration: BigInt
+  updatedAt: BigInt
+  updatedAtBlock: BigInt
+}
+
+# Per-account authorization state managed via setAuthorizedAddress
+# (id: account address).
+type AuthorizedAddress @entity(immutable: false) {
+  id: ID!
+  account: Bytes!
+  authorized: Boolean!
+  updatedAt: BigInt!
+  updatedAtBlock: BigInt!
+}
+
 # Gas Tracker — cumulative platform-wallet gas spend (id: "global")
 type GasPaid @entity(immutable: false) {
   id: ID!
@@ -238,6 +263,7 @@ type EscrowBalance @entity(timeseries: true) {
   timestamp: Timestamp!
   token: PaymentToken!
   balance: BigInt!
+  amountPaid: BigInt!
 }
 
 type EscrowStat
@@ -245,7 +271,8 @@ type EscrowStat
   id: Int8!
   timestamp: Timestamp!
   token: PaymentToken!
-  total: BigInt! @aggregate(fn: "sum", arg: "balance")
+  totalBalance: BigInt! @aggregate(fn: "sum", arg: "balance")
+  totalAmountPaid: BigInt! @aggregate(fn: "sum", arg: "amountPaid")
 }
 
 type FeePaid @entity(timeseries: true) {

@@ -8,6 +8,10 @@
     "address": "0x792af6df4f32ac3b8c2745dee42f9e08090c0746",
     "startBlock": 40636475
   },
+  "paymentProcessorStorage": {
+    "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "startBlock": 40636475
+  },
   "notes": {
     "address": "0x8391a68c01834d252c1dff975a621e8f99020b65",
     "startBlock": 40636475

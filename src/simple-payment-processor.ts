@@ -13,7 +13,7 @@ import {
   WithdrawalRetried as WithdrawalRetriedEvent,
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
 import { InvoiceEvent, SimplePaymentProcessor } from "../generated/schema";
-import { getDefaultHoldPeriod, getFee } from "./util/storage";
+import { getDefaultHoldPeriod, getFee } from "./payment-processor-storage";
 import {
   recordEscrowDelta,
   recordFee,
@@ -147,6 +147,7 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_ACCEPTED);
 
+  // take this to release
   recordFee(ETH, fee);
 }
 

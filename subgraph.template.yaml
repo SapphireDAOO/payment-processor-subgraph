@@ -37,7 +37,7 @@ dataSources:
           handler: handleInvoiceRefunded
         - event: InvoiceRejected(indexed uint216)
           handler: handleInvoiceRejected
-        - event: InvoiceReleased(indexed uint216)
+        - event: InvoiceReleased(indexed uint216,uint256,uint256)
           handler: handleInvoiceReleased
         - event: LockedPaymentRecovered(indexed uint216,indexed address,uint256)
           handler: handleLockedPaymentRecovered
@@ -85,7 +85,7 @@ dataSources:
           handler: handleDisputeDismissed
         - event: DisputeResolved(indexed uint216)
           handler: handleDisputeResolved
-        - event: DisputeSettled(indexed uint216,uint256,uint256)
+        - event: DisputeSettled(indexed uint216,uint256,uint256,uint256)
           handler: handleDisputeSettled
         - event: EscrowCreated(indexed uint216,indexed address)
           handler: handleEscrowCreated
@@ -95,7 +95,7 @@ dataSources:
           handler: handleMetaInvoiceCreated
         - event: OracleUpdated(indexed address,indexed address)
           handler: handleOracleUpdated
-        - event: PaymentReleased(indexed uint216,address,address,uint256)
+        - event: PaymentReleased(indexed uint216,address,address,uint256,uint256)
           handler: handlePaymentReleased
         - event: Refunded(indexed uint216,indexed uint256)
           handler: handleRefunded
@@ -103,9 +103,44 @@ dataSources:
           handler: handleTransferFailed
         - event: UpdateReleaseTime(indexed uint216,uint256)
           handler: handleUpdateReleaseTime
-        - event: WithdrawalRetried(indexed uint216,indexed address,uint256,uint8)
-          handler: handleWithdrawalRetried
       file: ./src/advanced-payment-processor.ts
+  - kind: ethereum
+    name: PaymentProcessorStorage
+    network: {{network}}
+    source:
+      abi: PaymentProcessorStorage
+      address: "{{paymentProcessorStorage.address}}"
+      startBlock: {{paymentProcessorStorage.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - StorageConfiguration
+        - AuthorizedAddress
+      abis:
+        - name: PaymentProcessorStorage
+          file: ./abis/PaymentProcessorStorage.json
+      eventHandlers:
+        - event: AuthorizationUpdated(indexed address,bool)
+          handler: handleAuthorizationUpdated
+        - event: ConfigurationInitialized((address,uint96,address,uint96,address,uint96))
+          handler: handleConfigurationInitialized
+        - event: DefaultHoldPeriodUpdated(uint96)
+          handler: handleDefaultHoldPeriodUpdated
+        - event: FeeRateUpdated(uint96)
+          handler: handleFeeRateUpdated
+        - event: FeeReceiverUpdated(indexed address)
+          handler: handleFeeReceiverUpdated
+        - event: GasThresholdUpdated(uint96)
+          handler: handleGasThresholdUpdated
+        - event: MarketplaceUpdated(indexed address)
+          handler: handleMarketplaceUpdated
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: PaymentValidityDurationUpdated(uint256)
+          handler: handlePaymentValidityDurationUpdated
+      file: ./src/payment-processor-storage.ts
   - kind: ethereum
     name: Notes
     network: {{network}}

@@ -298,6 +298,127 @@
   },
   {
     "type": "event",
+    "name": "AuthorizationUpdated",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "authorized",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ConfigurationInitialized",
+    "inputs": [
+      {
+        "name": "config",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct IPaymentProcessorStorage.Configuration",
+        "components": [
+          { "name": "owner", "type": "address", "internalType": "address" },
+          { "name": "feeRate", "type": "uint96", "internalType": "uint96" },
+          {
+            "name": "feeReceiver",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "defaultHoldPeriod",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "marketplace",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "gasThreshold",
+            "type": "uint96",
+            "internalType": "uint96"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DefaultHoldPeriodUpdated",
+    "inputs": [
+      {
+        "name": "defaultHoldPeriod",
+        "type": "uint96",
+        "indexed": false,
+        "internalType": "uint96"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FeeRateUpdated",
+    "inputs": [
+      {
+        "name": "feeRate",
+        "type": "uint96",
+        "indexed": false,
+        "internalType": "uint96"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FeeReceiverUpdated",
+    "inputs": [
+      {
+        "name": "feeReceiver",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GasThresholdUpdated",
+    "inputs": [
+      {
+        "name": "gasThreshold",
+        "type": "uint96",
+        "indexed": false,
+        "internalType": "uint96"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MarketplaceUpdated",
+    "inputs": [
+      {
+        "name": "marketplace",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "OwnershipHandoverCanceled",
     "inputs": [
       {
@@ -337,6 +458,19 @@
         "type": "address",
         "indexed": true,
         "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PaymentValidityDurationUpdated",
+    "inputs": [
+      {
+        "name": "validityDuration",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false

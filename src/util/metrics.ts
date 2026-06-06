@@ -46,6 +46,9 @@ export function recordEscrowDelta(tokenAddress: Address, delta: BigInt): void {
   const point = new EscrowBalance(TS_ID);
   point.token = token.id;
   point.balance = delta;
+  if (delta.gt(ZERO)) {
+    point.amountPaid = delta
+  }
   point.save();
 }
 
