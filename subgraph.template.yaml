@@ -33,9 +33,9 @@ dataSources:
           handler: handleInvoiceCreated
         - event: InvoicePaid(indexed uint216,indexed address,indexed uint256,uint40)
           handler: handleInvoicePaid
-        - event: InvoiceRefunded(indexed uint216)
+        - event: InvoiceRefunded(indexed uint216,uint256)
           handler: handleInvoiceRefunded
-        - event: InvoiceRejected(indexed uint216)
+        - event: InvoiceRejected(indexed uint216,uint256)
           handler: handleInvoiceRejected
         - event: InvoiceReleased(indexed uint216,uint256,uint256)
           handler: handleInvoiceReleased

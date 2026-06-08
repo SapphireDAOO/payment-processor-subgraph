@@ -1,4 +1,4 @@
-import { ethereum } from "@graphprotocol/graph-ts";
+import { BigInt, ethereum } from "@graphprotocol/graph-ts";
 import {
   InvoiceAccepted as InvoiceAcceptedEvent,
   InvoiceCanceled as InvoiceCanceledEvent,
@@ -70,12 +70,9 @@ function isEscrowed(state: string): boolean {
   return state == PAID || state == ACCEPTED;
 }
 
-function reverseEscrow(
-  invoice: SimplePaymentProcessor,
-  wasEscrowed: boolean,
-): void {
-  if (!wasEscrowed || invoice.amountPaid === null) return;
-  recordEscrowDelta(ETH, ZERO.minus(invoice.amountPaid!));
+function reverseEscrow(wasEscrowed: boolean, amount: BigInt): void {
+  if (!wasEscrowed) return;
+  recordEscrowDelta(ETH, amount.neg());
 }
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
@@ -169,7 +166,8 @@ export function handleInvoiceRefunded(event: InvoiceRefundedEvent): void {
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_REFUNDED);
-  reverseEscrow(invoice, wasEscrowed);
+  // Only the refunded portion leaves escrow.
+  reverseEscrow(wasEscrowed, event.params.amount);
 }
 
 export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
@@ -183,7 +181,8 @@ export function handleInvoiceRejected(event: InvoiceRejectedEvent): void {
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_REJECTED);
-  reverseEscrow(invoice, wasEscrowed);
+  // The amount returned to the buyer leaves escrow.
+  reverseEscrow(wasEscrowed, event.params.amount);
 }
 
 export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
@@ -198,7 +197,8 @@ export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_RELEASED);
-  reverseEscrow(invoice, wasEscrowed);
+  // The full escrowed amount (seller payout plus fee) is released.
+  reverseEscrow(wasEscrowed, invoice.amountPaid ? invoice.amountPaid! : ZERO);
 
   // Protocol fee is collected when the payment is released to the seller.
   recordFee(ETH, event.params.fee);

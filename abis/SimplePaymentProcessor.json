@@ -401,6 +401,12 @@
         "type": "uint216",
         "indexed": true,
         "internalType": "uint216"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -414,6 +420,12 @@
         "type": "uint216",
         "indexed": true,
         "internalType": "uint216"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
