@@ -1,27 +1,27 @@
 {
   "network": "base-sepolia",
   "simplePaymentProcessor": {
-    "address": "0xd70c10c73a716f85d97b5619dadfb6b1b6b6a706",
-    "startBlock": 40636475
+    "address": "0xC785B7f52F591BF0ce80beE45B09e1cf0A972957",
+    "startBlock": 42588324
   },
   "advancedPaymentProcessor": {
-    "address": "0x792af6df4f32ac3b8c2745dee42f9e08090c0746",
-    "startBlock": 40636475
+    "address": "0x0EecA9DE862fDFF9147aa1c55f186BB3881478E7",
+    "startBlock": 42588324
   },
   "paymentProcessorStorage": {
-    "address": "0xd70c10c73a716f85d97b5619dadfb6b1b6b6a706",
-    "startBlock": 40636475
+    "address": "0x74b1301b8a1DBdF0318bC81dD8c1b1375d0BF9AF",
+    "startBlock": 42588324
   },
   "notes": {
-    "address": "0x8391a68c01834d252c1dff975a621e8f99020b65",
-    "startBlock": 40636475
+    "address": "0x38844FD5258943F0Af0db706CeC75a9233140087",
+    "startBlock": 42588324
   },
   "multiSig": {
-    "address": "0x331798ef8a2a46b6e6a5864ba7f03016b875f193",
-    "startBlock": 40669962
+    "address": "0xA42498b1a91cB61B5303Ec0432f27b87B8255B4e",
+    "startBlock": 42588324
   },
   "oracleManager": {
-    "address": "0x0000000000000000000000000000000000000000",
-    "startBlock": 40636475
+    "address": "0x95423c49f0550e5Aaba0f53B434B05E65B0B1254",
+    "startBlock": 42588324
   }
 }
