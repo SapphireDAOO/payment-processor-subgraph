@@ -1,4 +1,4 @@
-import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
 import {
   ActiveUser,
   EscrowBalance,
@@ -53,7 +53,11 @@ export function recordEscrowDelta(tokenAddress: Address, delta: BigInt): void {
   point.save();
 }
 
-export function recordFee(tokenAddress: Address, fee: BigInt): void {
+export function recordFee(
+  tokenAddress: Address,
+  fee: BigInt,
+  txHash: Bytes,
+): void {
   if (fee.isZero()) return;
 
   const token = getOrCreatePaymentToken(tokenAddress);
@@ -61,6 +65,7 @@ export function recordFee(tokenAddress: Address, fee: BigInt): void {
   const point = new FeePaid(TS_ID);
   point.token = token.id;
   point.amount = fee;
+  point.txHash = txHash;
   point.save();
 }
 

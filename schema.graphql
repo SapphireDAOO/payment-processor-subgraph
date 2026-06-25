@@ -280,6 +280,7 @@ type FeePaid @entity(timeseries: true) {
   timestamp: Timestamp!
   token: PaymentToken!
   amount: BigInt!
+  txHash: Bytes!
 }
 
 type FeePaidStats @aggregation(intervals: ["day"], source: "FeePaid") {

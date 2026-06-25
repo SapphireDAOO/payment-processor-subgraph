@@ -201,7 +201,7 @@ export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
   reverseEscrow(wasEscrowed, invoice.amountPaid ? invoice.amountPaid! : ZERO);
 
   // Protocol fee is collected when the payment is released to the seller.
-  recordFee(ETH, event.params.fee);
+  recordFee(ETH, event.params.fee, event.transaction.hash);
 }
 
 export function handleLockedPaymentRecovered(

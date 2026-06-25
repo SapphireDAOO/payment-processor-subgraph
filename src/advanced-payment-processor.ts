@@ -247,7 +247,7 @@ export function handleDisputeSettled(event: DisputeSettledEvent): void {
   // Full escrow is distributed between buyer and seller at settlement;
   // the protocol fee is collected here.
   recordEscrowDelta(invoiceToken(invoice), priorBalance.neg());
-  recordFee(invoiceToken(invoice), event.params.fee);
+  recordFee(invoiceToken(invoice), event.params.fee, event.transaction.hash);
 }
 
 export function handleRefunded(event: RefundedEvent): void {
@@ -292,7 +292,7 @@ export function handlePaymentReleased(event: PaymentReleasedEvent): void {
   // All remaining escrow is released to the seller; the protocol fee is
   // collected here.
   recordEscrowDelta(invoiceToken(invoice), priorBalance.neg());
-  recordFee(invoiceToken(invoice), event.params.fee);
+  recordFee(invoiceToken(invoice), event.params.fee, event.transaction.hash);
 }
 
 export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
