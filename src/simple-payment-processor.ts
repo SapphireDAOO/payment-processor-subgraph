@@ -7,9 +7,7 @@ import {
   InvoiceRefunded as InvoiceRefundedEvent,
   InvoiceRejected as InvoiceRejectedEvent,
   InvoiceReleased as InvoiceReleasedEvent,
-  LockedPaymentRecovered as LockedPaymentRecoveredEvent,
   TransferFailed as TransferFailedEvent,
-  UpdateHoldPeriod as UpdateHoldPeriodEvent,
   WithdrawalRetried as WithdrawalRetriedEvent,
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
 import { InvoiceEvent, SimplePaymentProcessor } from "../generated/schema";
@@ -34,7 +32,6 @@ import {
   INVOICE_REFUNDED,
   INVOICE_REJECTED,
   INVOICE_RELEASED,
-  LOCKED_PAYMENT_RECOVERED,
   PAID,
   PAYER,
   REFUNDED,
@@ -42,7 +39,6 @@ import {
   RELEASED,
   SIMPLE,
   TRANSFER_FAILED,
-  UPDATE_HOLD_PERIOD,
   WITHDRAWAL_RETRIED,
   ZERO,
 } from "./util/constants";
@@ -94,17 +90,6 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   saveInvoiceEvent(event, id, INVOICE_CREATED);
 }
 
-export function handleHoldPeriod(event: UpdateHoldPeriodEvent): void {
-  const id = event.params.invoiceId.toString();
-  const invoice = SimplePaymentProcessor.load(id);
-  if (!invoice) return;
-
-  invoice.releaseAt = event.params.releaseDueTimestamp;
-  invoice.lastActionTime = event.block.timestamp;
-  invoice.save();
-  saveInvoiceEvent(event, id, UPDATE_HOLD_PERIOD);
-}
-
 export function handleInvoicePaid(event: InvoicePaidEvent): void {
   const id = event.params.invoiceId.toString();
   const invoice = SimplePaymentProcessor.load(id);
@@ -133,6 +118,7 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
   if (!invoice) return;
 
   invoice.state = ACCEPTED;
+  invoice.feeReceiver = event.params.feeReceiver;
   invoice.lastActionTime = event.block.timestamp;
 
   if (!invoice.releaseAt) {
@@ -202,18 +188,6 @@ export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
 
   // Protocol fee is collected when the payment is released to the seller.
   recordFee(ETH, event.params.fee, event.transaction.hash);
-}
-
-export function handleLockedPaymentRecovered(
-  event: LockedPaymentRecoveredEvent,
-): void {
-  const id = event.params.invoiceId.toString();
-  const invoice = SimplePaymentProcessor.load(id);
-  if (!invoice) return;
-
-  invoice.lastActionTime = event.block.timestamp;
-  invoice.save();
-  saveInvoiceEvent(event, id, LOCKED_PAYMENT_RECOVERED);
 }
 
 export function handleTransferFailed(event: TransferFailedEvent): void {

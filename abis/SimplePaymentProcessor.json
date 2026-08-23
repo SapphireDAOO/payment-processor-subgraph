@@ -16,15 +16,23 @@
         "name": "_notesAddress",
         "type": "address",
         "internalType": "address"
-      }
+      },
+      { "name": "_wethAddress", "type": "address", "internalType": "address" }
     ],
     "stateMutability": "nonpayable"
   },
+  { "type": "receive", "stateMutability": "payable" },
   {
     "type": "function",
     "name": "acceptPayment",
     "inputs": [
-      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
+      {
+        "name": "_feeReceiver",
+        "type": "address",
+        "internalType": "address"
+      },
+      { "name": "_data", "type": "bytes", "internalType": "bytes" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -51,19 +59,10 @@
   },
   {
     "type": "function",
-    "name": "checkUpkeep",
-    "inputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
-    "outputs": [
-      { "name": "upkeepNeeded", "type": "bool", "internalType": "bool" },
-      { "name": "performData", "type": "bytes", "internalType": "bytes" }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "createInvoice",
     "inputs": [
       { "name": "_price", "type": "uint256", "internalType": "uint256" },
+      { "name": "_holdPeriod", "type": "uint32", "internalType": "uint32" },
       { "name": "_storageRef", "type": "bytes", "internalType": "bytes" },
       { "name": "_share", "type": "bool", "internalType": "bool" }
     ],
@@ -74,20 +73,26 @@
   },
   {
     "type": "function",
-    "name": "decisionWindow",
+    "name": "getAutomation",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "outputs": [
+      {
+        "name": "automationAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "getForwarder",
+    "name": "getDecisionWindow",
     "inputs": [],
     "outputs": [
       {
-        "name": "forwarderAddress",
-        "type": "address",
-        "internalType": "address"
+        "name": "decisionWindowValue",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -118,15 +123,26 @@
             "internalType": "uint40"
           },
           { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
+          {
+            "name": "holdPeriod",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
           { "name": "state", "type": "uint8", "internalType": "uint8" },
           {
             "name": "withdrawalRetries",
             "type": "uint8",
             "internalType": "uint8"
           },
+          { "name": "feeRate", "type": "uint16", "internalType": "uint16" },
           { "name": "seller", "type": "address", "internalType": "address" },
           { "name": "buyer", "type": "address", "internalType": "address" },
           { "name": "escrow", "type": "address", "internalType": "address" },
+          {
+            "name": "feeReceiver",
+            "type": "address",
+            "internalType": "address"
+          },
           { "name": "price", "type": "uint256", "internalType": "uint256" },
           { "name": "balance", "type": "uint256", "internalType": "uint256" }
         ]
@@ -167,6 +183,15 @@
   },
   {
     "type": "function",
+    "name": "hasDueTasks",
+    "inputs": [],
+    "outputs": [
+      { "name": "dueTasksExist", "type": "bool", "internalType": "bool" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "pay",
     "inputs": [
       { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
@@ -184,13 +209,6 @@
   },
   {
     "type": "function",
-    "name": "performUpkeep",
-    "inputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "ppStorage",
     "inputs": [],
     "outputs": [
@@ -201,6 +219,13 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "processDueTasks",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -231,11 +256,13 @@
   },
   {
     "type": "function",
-    "name": "releaseLocked",
+    "name": "setAutomation",
     "inputs": [
-      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
-      { "name": "_recipient", "type": "address", "internalType": "address" },
-      { "name": "_amount", "type": "uint256", "internalType": "uint256" }
+      {
+        "name": "_automationAddress",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -255,29 +282,6 @@
   },
   {
     "type": "function",
-    "name": "setForwarderAddress",
-    "inputs": [
-      {
-        "name": "_forwarderAddress",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setInvoiceReleaseTime",
-    "inputs": [
-      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
-      { "name": "_holdPeriod", "type": "uint40", "internalType": "uint40" }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "setMinimumInvoiceValue",
     "inputs": [
       {
@@ -290,6 +294,28 @@
     "stateMutability": "nonpayable"
   },
   {
+    "type": "function",
+    "name": "weth",
+    "inputs": [],
+    "outputs": [
+      { "name": "", "type": "address", "internalType": "contract IWETH" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "AutomationUpdated",
+    "inputs": [
+      {
+        "name": "automation",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
     "type": "event",
     "name": "InvoiceAccepted",
     "inputs": [
@@ -298,6 +324,12 @@
         "type": "uint216",
         "indexed": true,
         "internalType": "uint216"
+      },
+      {
+        "name": "feeReceiver",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -345,15 +377,26 @@
             "internalType": "uint40"
           },
           { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
+          {
+            "name": "holdPeriod",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
           { "name": "state", "type": "uint8", "internalType": "uint8" },
           {
             "name": "withdrawalRetries",
             "type": "uint8",
             "internalType": "uint8"
           },
+          { "name": "feeRate", "type": "uint16", "internalType": "uint16" },
           { "name": "seller", "type": "address", "internalType": "address" },
           { "name": "buyer", "type": "address", "internalType": "address" },
           { "name": "escrow", "type": "address", "internalType": "address" },
+          {
+            "name": "feeReceiver",
+            "type": "address",
+            "internalType": "address"
+          },
           { "name": "price", "type": "uint256", "internalType": "uint256" },
           { "name": "balance", "type": "uint256", "internalType": "uint256" }
         ]
@@ -457,19 +500,13 @@
   },
   {
     "type": "event",
-    "name": "LockedPaymentRecovered",
+    "name": "PaymentBurned",
     "inputs": [
       {
         "name": "invoiceId",
         "type": "uint216",
         "indexed": true,
         "internalType": "uint216"
-      },
-      {
-        "name": "recipient",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
       },
       {
         "name": "amount",
@@ -507,25 +544,6 @@
   },
   {
     "type": "event",
-    "name": "UpdateHoldPeriod",
-    "inputs": [
-      {
-        "name": "invoiceId",
-        "type": "uint216",
-        "indexed": true,
-        "internalType": "uint216"
-      },
-      {
-        "name": "releaseDueTimestamp",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "WithdrawalRetried",
     "inputs": [
       {
@@ -556,6 +574,7 @@
     "anonymous": false
   },
   { "type": "error", "name": "AcceptanceWindowExceeded", "inputs": [] },
+  { "type": "error", "name": "ContractPaused", "inputs": [] },
   { "type": "error", "name": "DuplicateTask", "inputs": [] },
   { "type": "error", "name": "EscrowWithdrawFailed", "inputs": [] },
   { "type": "error", "name": "HoldPeriodHasNotBeenExceeded", "inputs": [] },
@@ -568,6 +587,8 @@
     ]
   },
   { "type": "error", "name": "InvalidDecisionWindow", "inputs": [] },
+  { "type": "error", "name": "InvalidFeeAuthorization", "inputs": [] },
+  { "type": "error", "name": "InvalidFeeReceiver", "inputs": [] },
   { "type": "error", "name": "InvalidHeapPosition", "inputs": [] },
   {
     "type": "error",
@@ -587,5 +608,6 @@
   { "type": "error", "name": "Reentrancy", "inputs": [] },
   { "type": "error", "name": "SellerCannotPayOwnedInvoice", "inputs": [] },
   { "type": "error", "name": "TaskNotFound", "inputs": [] },
+  { "type": "error", "name": "UnexpectedNativeTransfer", "inputs": [] },
   { "type": "error", "name": "ValueIsTooLow", "inputs": [] }
 ]

@@ -2,11 +2,9 @@ import { BigInt, ethereum } from "@graphprotocol/graph-ts";
 import {
   AuthorizationUpdated,
   ConfigurationInitialized,
-  DefaultHoldPeriodUpdated,
   FeeRateUpdated,
   FeeReceiverUpdated,
   GasThresholdUpdated,
-  MarketplaceUpdated,
   OwnershipTransferred,
   PaymentValidityDurationUpdated,
 } from "../generated/PaymentProcessorStorage/PaymentProcessorStorage";
@@ -47,17 +45,7 @@ export function handleConfigurationInitialized(
   config.owner = c.owner;
   config.feeRate = c.feeRate;
   config.feeReceiver = c.feeReceiver;
-  config.defaultHoldPeriod = c.defaultHoldPeriod;
-  config.marketplace = c.marketplace;
   config.gasThreshold = c.gasThreshold;
-  config.save();
-}
-
-export function handleDefaultHoldPeriodUpdated(
-  event: DefaultHoldPeriodUpdated,
-): void {
-  const config = getConfiguration(event);
-  config.defaultHoldPeriod = event.params.defaultHoldPeriod;
   config.save();
 }
 
@@ -76,12 +64,6 @@ export function handleFeeReceiverUpdated(event: FeeReceiverUpdated): void {
 export function handleGasThresholdUpdated(event: GasThresholdUpdated): void {
   const config = getConfiguration(event);
   config.gasThreshold = event.params.gasThreshold;
-  config.save();
-}
-
-export function handleMarketplaceUpdated(event: MarketplaceUpdated): void {
-  const config = getConfiguration(event);
-  config.marketplace = event.params.marketplace;
   config.save();
 }
 

@@ -24,12 +24,12 @@ dataSources:
         - name: PaymentProcessorStorage
           file: ./abis/PaymentProcessorStorage.json
       eventHandlers:
-        - event: InvoiceAccepted(indexed uint216)
+        - event: InvoiceAccepted(indexed uint216,indexed address)
           handler: handleInvoiceAccepted
         - event: InvoiceCanceled(indexed uint216)
           handler: handleInvoiceCanceled
         - event: InvoiceCreated(indexed
-            uint216,(uint216,uint40,uint40,uint40,uint40,uint40,uint8,uint8,address,address,address,uint256,uint256))
+            uint216,(uint216,uint40,uint40,uint40,uint40,uint40,uint32,uint8,uint8,uint16,address,address,address,address,uint256,uint256))
           handler: handleInvoiceCreated
         - event: InvoicePaid(indexed uint216,indexed address,indexed uint256,uint40)
           handler: handleInvoicePaid
@@ -39,12 +39,8 @@ dataSources:
           handler: handleInvoiceRejected
         - event: InvoiceReleased(indexed uint216,uint256,uint256)
           handler: handleInvoiceReleased
-        - event: LockedPaymentRecovered(indexed uint216,indexed address,uint256)
-          handler: handleLockedPaymentRecovered
         - event: TransferFailed(indexed uint216,indexed address,uint256)
           handler: handleTransferFailed
-        - event: UpdateHoldPeriod(indexed uint216,indexed uint256)
-          handler: handleHoldPeriod
         - event: WithdrawalRetried(indexed uint216,indexed address,uint256,uint8)
           handler: handleWithdrawalRetried
       file: ./src/simple-payment-processor.ts
@@ -73,9 +69,9 @@ dataSources:
           file: ./abis/PaymentProcessorStorage.json
       eventHandlers:
         - event: InvoiceCreated(indexed
-            uint216,(uint216,uint40,uint40,uint40,uint40,uint8,uint8,uint32,uint216,address,address,address,address,uint256,uint256,uint256))
+            uint216,(uint216,uint40,uint40,uint40,uint40,uint8,uint8,uint32,uint16,uint216,address,address,address,address,address,uint256,uint256,uint256))
           handler: handleAdvancedPaymentProcessorCreated
-        - event: InvoicePaid(indexed uint216,address,address,uint256,uint40)
+        - event: InvoicePaid(indexed uint216,address,address,uint256,uint40,address)
           handler: handleInvoicePaid
         - event: InvoiceCanceled(indexed uint216)
           handler: handleInvoiceCanceled
@@ -124,18 +120,14 @@ dataSources:
       eventHandlers:
         - event: AuthorizationUpdated(indexed address,bool)
           handler: handleAuthorizationUpdated
-        - event: ConfigurationInitialized((address,uint96,address,uint96,address,uint96))
+        - event: ConfigurationInitialized((address,uint96,address,address,uint96))
           handler: handleConfigurationInitialized
-        - event: DefaultHoldPeriodUpdated(uint96)
-          handler: handleDefaultHoldPeriodUpdated
         - event: FeeRateUpdated(uint96)
           handler: handleFeeRateUpdated
         - event: FeeReceiverUpdated(indexed address)
           handler: handleFeeReceiverUpdated
         - event: GasThresholdUpdated(uint96)
           handler: handleGasThresholdUpdated
-        - event: MarketplaceUpdated(indexed address)
-          handler: handleMarketplaceUpdated
         - event: OwnershipTransferred(indexed address,indexed address)
           handler: handleOwnershipTransferred
         - event: PaymentValidityDurationUpdated(uint256)

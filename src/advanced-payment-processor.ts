@@ -167,6 +167,7 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   invoice.escrow = event.params.escrowAddress;
   invoice.paymentToken = token.id;
   invoice.releaseAt = event.params.releaseAt;
+  invoice.feeReceiver = event.params.feeReceiver;
   invoice.lastActionTime = event.block.timestamp;
 
   invoice.save();

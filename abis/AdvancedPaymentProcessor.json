@@ -60,7 +60,7 @@
       {
         "name": "_param",
         "type": "tuple[]",
-        "internalType": "struct IAdvancedPaymentProcessor.InvoiceCreationParam[]",
+        "internalType": "struct IIntermediatedPaymentProcessor.InvoiceCreationParam[]",
         "components": [
           { "name": "invoiceId", "type": "string", "internalType": "string" },
           { "name": "seller", "type": "address", "internalType": "address" },
@@ -89,7 +89,7 @@
       {
         "name": "_param",
         "type": "tuple",
-        "internalType": "struct IAdvancedPaymentProcessor.InvoiceCreationParam",
+        "internalType": "struct IIntermediatedPaymentProcessor.InvoiceCreationParam",
         "components": [
           { "name": "invoiceId", "type": "string", "internalType": "string" },
           { "name": "seller", "type": "address", "internalType": "address" },
@@ -117,7 +117,7 @@
       {
         "name": "i",
         "type": "tuple",
-        "internalType": "struct IAdvancedPaymentProcessor.Invoice",
+        "internalType": "struct IIntermediatedPaymentProcessor.Invoice",
         "components": [
           {
             "name": "invoiceNonce",
@@ -139,6 +139,7 @@
             "type": "uint32",
             "internalType": "uint32"
           },
+          { "name": "feeRate", "type": "uint16", "internalType": "uint16" },
           {
             "name": "metaInvoiceId",
             "type": "uint216",
@@ -149,6 +150,11 @@
           { "name": "escrow", "type": "address", "internalType": "address" },
           {
             "name": "paymentToken",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "feeReceiver",
             "type": "address",
             "internalType": "address"
           },
@@ -178,7 +184,7 @@
       {
         "name": "m",
         "type": "tuple",
-        "internalType": "struct IAdvancedPaymentProcessor.MetaInvoice",
+        "internalType": "struct IIntermediatedPaymentProcessor.MetaInvoice",
         "components": [
           { "name": "price", "type": "uint256", "internalType": "uint256" },
           {
@@ -295,7 +301,13 @@
         "name": "_paymentToken",
         "type": "address",
         "internalType": "address"
-      }
+      },
+      {
+        "name": "_feeReceiver",
+        "type": "address",
+        "internalType": "address"
+      },
+      { "name": "_data", "type": "bytes", "internalType": "bytes" }
     ],
     "outputs": [],
     "stateMutability": "payable"
@@ -538,7 +550,7 @@
         "name": "invoice",
         "type": "tuple",
         "indexed": false,
-        "internalType": "struct IAdvancedPaymentProcessor.Invoice",
+        "internalType": "struct IIntermediatedPaymentProcessor.Invoice",
         "components": [
           {
             "name": "invoiceNonce",
@@ -560,6 +572,7 @@
             "type": "uint32",
             "internalType": "uint32"
           },
+          { "name": "feeRate", "type": "uint16", "internalType": "uint16" },
           {
             "name": "metaInvoiceId",
             "type": "uint216",
@@ -570,6 +583,11 @@
           { "name": "escrow", "type": "address", "internalType": "address" },
           {
             "name": "paymentToken",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "feeReceiver",
             "type": "address",
             "internalType": "address"
           },
@@ -618,6 +636,12 @@
         "type": "uint40",
         "indexed": false,
         "internalType": "uint40"
+      },
+      {
+        "name": "feeReceiver",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -786,10 +810,12 @@
     "anonymous": false
   },
   { "type": "error", "name": "BuyerCannotBeSeller", "inputs": [] },
+  { "type": "error", "name": "ContractPaused", "inputs": [] },
   { "type": "error", "name": "Create2EmptyBytecode", "inputs": [] },
   { "type": "error", "name": "EmptyMetaInvoice", "inputs": [] },
   { "type": "error", "name": "EscrowWithdrawFailed", "inputs": [] },
   { "type": "error", "name": "FailedDeployment", "inputs": [] },
+  { "type": "error", "name": "HoldPeriodCanNotBeZero", "inputs": [] },
   {
     "type": "error",
     "name": "InsufficientBalance",
@@ -800,6 +826,8 @@
   },
   { "type": "error", "name": "InsufficientBalance", "inputs": [] },
   { "type": "error", "name": "InvalidDisputeResolution", "inputs": [] },
+  { "type": "error", "name": "InvalidFeeAuthorization", "inputs": [] },
+  { "type": "error", "name": "InvalidFeeReceiver", "inputs": [] },
   { "type": "error", "name": "InvalidInvoiceState", "inputs": [] },
   {
     "type": "error",

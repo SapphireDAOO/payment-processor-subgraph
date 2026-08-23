@@ -97,6 +97,7 @@ type SimplePaymentProcessor @entity(immutable: false) {
   expiresAt: BigInt
   releaseAt: BigInt
   fee: BigInt
+  feeReceiver: Bytes
   contract: Bytes!
   events: [InvoiceEvent!]! @derivedFrom(field: "simpleInvoice")
   lastActionTime: BigInt
@@ -124,6 +125,7 @@ type AdvancedPaymentProcessor @entity(immutable: false) {
   contract: Bytes!
   events: [InvoiceEvent!]! @derivedFrom(field: "advancedInvoice")
   fee: BigInt
+  feeReceiver: Bytes
   lastActionTime: BigInt
   metaInvoice: MetaInvoice
   buyerNote: String
