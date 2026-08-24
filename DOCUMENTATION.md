@@ -45,32 +45,30 @@ The manifest (`subgraph.yaml`) is currently configured for a **local chain** (`n
 
 ### SimplePaymentProcessor
 
-- **Address:** `0x5FC8d32690cc91D4c39d9d3abcBD16989F875707`
+- **Address:** `0x3eFd0810C07232Bc4B52c1A812AfB8b4747090A1`
 - **Handler file:** `src/simple-payment-processor.ts`
 
 | Event                                                  | Handler                       | Description                                                          |
 | ------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------------- |
 | `InvoiceCreated(invoiceId, invoice)`                   | `handleInvoiceCreated`        | Creates the `SimplePaymentProcessor` entity and the seller `User`   |
-| `InvoicePaid(invoiceId, buyer, amountPaid, expiresAt)` | `handleInvoicePaid`           | Records buyer and amount paid; adds volume/escrow + recent tx       |
-| `InvoiceAccepted(invoiceId)`                           | `handleInvoiceAccepted`       | Computes the protocol fee and sets `releaseAt` (default hold period) |
+| `InvoicePaid(invoiceId, buyer, amountPaid, sellerActionDeadline)` | `handleInvoicePaid`  | Records buyer, amount paid and seller action deadline; adds volume/escrow |
+| `InvoiceAccepted(invoiceId, feeReceiver)`              | `handleInvoiceAccepted`       | Records the `feeReceiver` and sets `releaseAt` (default hold period) |
 | `InvoiceCanceled(invoiceId)`                           | `handleInvoiceCanceled`       | Marks the invoice `CANCELED`                                         |
 | `InvoiceRejected(invoiceId)`                           | `handleInvoiceRejected`       | Marks the invoice `REJECTED`; reverses escrow                       |
 | `InvoiceRefunded(invoiceId)`                           | `handleInvoiceRefunded`       | Marks the invoice `REFUNDED`; reverses escrow                       |
 | `InvoiceReleased(invoiceId)`                           | `handleInvoiceReleased`       | Marks the invoice `RELEASED`; reverses escrow + recent tx           |
-| `UpdateHoldPeriod(invoiceId, releaseDueTimestamp)`     | `handleHoldPeriod`            | Sets `releaseAt` from the event                                     |
-| `LockedPaymentRecovered(invoiceId, to, amount)`        | `handleLockedPaymentRecovered`| Logs the recovery event                                            |
 | `TransferFailed(invoiceId, to, amount)`                | `handleTransferFailed`        | Logs the failed-transfer event                                     |
 | `WithdrawalRetried(invoiceId, to, amount, retries)`    | `handleWithdrawalRetried`     | Logs the withdrawal-retry event                                    |
 
 ### AdvancedPaymentProcessor
 
-- **Address:** `0xa513E6E4b8f2a923D98304ec87F64353C4D5C853`
+- **Address:** `0x60097C87D117639dE03D8871496A61d530030BA3`
 - **Handler file:** `src/advanced-payment-processor.ts`
 
 | Event                                                                    | Handler                                 | Description                                                                |
 | ------------------------------------------------------------------------ | --------------------------------------- | -------------------------------------------------------------------------- |
 | `InvoiceCreated(invoiceId, invoice)`                                     | `handleAdvancedPaymentProcessorCreated` | Creates the `AdvancedPaymentProcessor` entity, links `metaInvoice` if any  |
-| `InvoicePaid(invoiceId, paymentToken, escrowAddress, amount, releaseAt)` | `handleInvoicePaid`                     | Records payment, token, escrow, `releaseAt`, fee; adds volume/escrow + tx  |
+| `InvoicePaid(invoiceId, paymentToken, escrowAddress, amount, releaseAt, feeReceiver)` | `handleInvoicePaid`       | Records payment, token, escrow, `releaseAt`, `feeReceiver`; adds volume/escrow |
 | `InvoiceCanceled(invoiceId)`                                             | `handleInvoiceCanceled`                 | Marks invoice `CANCELED`                                                    |
 | `DisputeCreated(invoiceId)`                                              | `handleDisputeCreated`                  | Marks invoice `DISPUTED`                                                    |
 | `DisputeDismissed(invoiceId)`                                            | `handleDisputeDismissed`                | Marks invoice `DISPUTE_DISMISSED`                                           |
@@ -90,7 +88,7 @@ Every advanced action **except payment** also accrues to [`GasPaid`](#gaspaid).
 
 ### Notes
 
-- **Address:** `0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9`
+- **Address:** `0xaaC13d0c17962f488daceD051AEd81F8646436f7`
 - **Handler file:** `src/notes.ts`
 
 | Event                                                             | Handler                  | Description                                 |
@@ -100,7 +98,7 @@ Every advanced action **except payment** also accrues to [`GasPaid`](#gaspaid).
 
 ### MultiSig
 
-- **Address:** `0x5FbDB2315678afecb367f032d93F642f64180aa3`
+- **Address:** `0xA4191f3b63b758e54F9dA05f651e54343D6e0651`
 - **Handler file:** `src/multi-sig.ts`
 
 | Event                                                               | Handler                     | Description                                                                    |
@@ -116,7 +114,7 @@ Every advanced action **except payment** also accrues to [`GasPaid`](#gaspaid).
 
 ### OracleManager
 
-- **Address:** `0x0165878A594ca255338adfa4d48449f69242Eb8F`
+- **Address:** `0x7E5bcF73884f526Bb3E1b5A1D9788D85b8841844`
 - **Handler file:** `src/oracle-manager.ts`
 
 | Event                                  | Handler             | Description                                                  |
@@ -159,10 +157,11 @@ One invoice on the SimplePaymentProcessor contract. The `id` is the on-chain `in
 | `buyer`          | `User`                        | Buyer who paid (null until paid)                                      |
 | `price`          | `BigInt!`                     | Invoice price in wei (ETH)                                            |
 | `amountPaid`     | `BigInt`                      | Amount paid by the buyer in wei                                       |
-| `invalidateAt`   | `BigInt`                      | Timestamp after which the invoice expires if unpaid                  |
-| `expiresAt`      | `BigInt`                      | Timestamp after which the buyer's payment window closes              |
+| `expiresAt`      | `BigInt`                      | Timestamp after which the invoice expires if unpaid                  |
+| `sellerActionDeadline` | `BigInt`                | Deadline for the seller to accept or reject after payment            |
 | `releaseAt`      | `BigInt`                      | Timestamp after which funds can be released (hold period)            |
-| `fee`            | `BigInt`                      | Protocol fee deducted on acceptance, in wei                          |
+| `fee`            | `BigInt`                      | Protocol fee deducted on release, in wei                             |
+| `feeReceiver`    | `Bytes`                       | Address that receives the protocol fee for this invoice              |
 | `contract`       | `Bytes!`                      | Address of the SimplePaymentProcessor contract                       |
 | `events`         | `[InvoiceEvent!]!`            | Derived: append-only event log for this invoice                      |
 | `lastActionTime` | `BigInt`                      | Block timestamp of the most recent state change                      |
@@ -195,6 +194,7 @@ One invoice on the AdvancedPaymentProcessor contract; supports multi-token payme
 | `contract`                        | `Bytes!`                        | Address of the AdvancedPaymentProcessor contract                    |
 | `events`                          | `[InvoiceEvent!]!`              | Derived: append-only event log for this invoice                     |
 | `fee`                             | `BigInt`                        | Protocol fee amount                                                 |
+| `feeReceiver`                     | `Bytes`                         | Address that receives the protocol fee for this invoice            |
 | `lastActionTime`                  | `BigInt`                        | Most recent state change timestamp                                 |
 | `metaInvoice`                     | `MetaInvoice`                   | Parent meta-invoice, if this invoice is part of a batch            |
 | `buyerNote`                       | `String`                        | Optional note left by the buyer                                    |
