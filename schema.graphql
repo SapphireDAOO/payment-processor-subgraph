@@ -98,6 +98,8 @@ type SimplePaymentProcessor @entity(immutable: false) {
   releaseAt: BigInt
   fee: BigInt
   feeReceiver: Bytes
+  # Tx in which the best-effort fee payout failed; the fee was not credited.
+  feeTransferFailedTx: Bytes
   contract: Bytes!
   events: [InvoiceEvent!]! @derivedFrom(field: "simpleInvoice")
   lastActionTime: BigInt
@@ -126,6 +128,8 @@ type AdvancedPaymentProcessor @entity(immutable: false) {
   events: [InvoiceEvent!]! @derivedFrom(field: "advancedInvoice")
   fee: BigInt
   feeReceiver: Bytes
+  # Tx in which the best-effort fee payout failed; the fee was not credited.
+  feeTransferFailedTx: Bytes
   lastActionTime: BigInt
   metaInvoice: MetaInvoice
   buyerNote: String
@@ -235,6 +239,44 @@ type AuthorizedAddress @entity(immutable: false) {
   authorized: Boolean!
   updatedAt: BigInt!
   updatedAtBlock: BigInt!
+}
+
+type FeeReceiver @entity(immutable: false) {
+  id: ID!
+  address: Bytes!
+  balances: [FeeReceiverTokenBalance!]! @derivedFrom(field: "feeReceiver")
+  sweeps: [FeeSweep!]! @derivedFrom(field: "feeReceiver")
+  # Number of Swept transfers out of this receiver, across all tokens.
+  sweepCount: BigInt!
+  firstCreditedAt: BigInt
+  updatedAt: BigInt!
+  updatedAtBlock: BigInt!
+}
+
+type FeeReceiverTokenBalance @entity(immutable: false) {
+  id: ID!
+  feeReceiver: FeeReceiver!
+  token: PaymentToken!
+  # Cumulative fees credited to this receiver in this token.
+  accrued: BigInt!
+  # Cumulative amount swept out by the Sweeper.
+  swept: BigInt!
+  # accrued - swept: what the receiver still holds from platform fees.
+  balance: BigInt!
+  updatedAt: BigInt!
+  updatedAtBlock: BigInt!
+}
+
+# One Sweeper transfer moving a fee receiver's tokens to a destination.
+type FeeSweep @entity(immutable: true) {
+  id: ID!
+  feeReceiver: FeeReceiver!
+  token: PaymentToken!
+  destination: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  block: BigInt!
+  txHash: Bytes!
 }
 
 # Gas Tracker — cumulative platform-wallet gas spend (id: "global")

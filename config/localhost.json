@@ -23,5 +23,9 @@
   "oracleManager": {
     "address": "0x7E5bcF73884f526Bb3E1b5A1D9788D85b8841844",
     "startBlock": 0
+  },
+  "sweeper": {
+    "address": "0x42fd5c29E76a40E52bD036dB2362BB6c288C7F8A",
+    "startBlock": 0
   }
 }

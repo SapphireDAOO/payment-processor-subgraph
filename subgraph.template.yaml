@@ -18,11 +18,16 @@ dataSources:
       entities:
         - SimplePaymentProcessor
         - InvoiceEvent
+        - FeeReceiver
+        - FeeReceiverTokenBalance
+        - PaymentToken
       abis:
         - name: SimplePaymentProcessor
           file: ./abis/SimplePaymentProcessor.json
         - name: PaymentProcessorStorage
           file: ./abis/PaymentProcessorStorage.json
+        - name: ERC20
+          file: ./abis/ERC20.json
       eventHandlers:
         - event: InvoiceAccepted(indexed uint216,indexed address,uint40)
           handler: handleInvoiceAccepted
@@ -60,6 +65,8 @@ dataSources:
         - MetaInvoice
         - InvoiceEvent
         - PaymentToken
+        - FeeReceiver
+        - FeeReceiverTokenBalance
       abis:
         - name: AdvancedPaymentProcessor
           file: ./abis/AdvancedPaymentProcessor.json
@@ -215,3 +222,28 @@ dataSources:
         - event: PriceFeedSet(indexed address,indexed address,uint96)
           handler: handlePriceFeedSet
       file: ./src/oracle-manager.ts
+  - kind: ethereum
+    name: Sweeper
+    network: {{network}}
+    source:
+      abi: Sweeper
+      address: "{{sweeper.address}}"
+      startBlock: {{sweeper.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - FeeReceiver
+        - FeeReceiverTokenBalance
+        - FeeSweep
+        - PaymentToken
+      abis:
+        - name: Sweeper
+          file: ./abis/Sweeper.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Swept(indexed address,indexed address,indexed address,uint256)
+          handler: handleSwept
+      file: ./src/sweeper.ts

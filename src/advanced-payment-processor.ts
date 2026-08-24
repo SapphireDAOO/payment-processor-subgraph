@@ -1,4 +1,4 @@
-import { Address, ethereum } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import {
   DisputeCreated as DisputeCreatedEvent,
   DisputeDismissed as DisputeDismissedEvent,
@@ -20,6 +20,7 @@ import {
   AdvancedPaymentProcessor,
   InvoiceEvent,
   MetaInvoice,
+  StorageConfiguration,
 } from "../generated/schema";
 import {
   getOrCreatePaymentToken,
@@ -30,6 +31,7 @@ import {
   recordPaymentVolume,
 } from "./util/metrics";
 import { trackUser } from "./util/user";
+import { creditFee } from "./util/fees";
 import {
   ADVANCED,
   CANCELED,
@@ -44,6 +46,7 @@ import {
   DISPUTE_SETTLED_EVENT,
   DISPUTED,
   ESCROW_CREATED,
+  GLOBAL,
   INVOICE_CANCELED,
   INVOICE_CREATED,
   INVOICE_PAID,
@@ -91,6 +94,32 @@ function saveInvoiceEvent(
   if (trackGas) {
     recordGas(event);
   }
+}
+
+// Mirrors the contract's _feeReceiverFor: the invoice's own receiver, falling
+// back to the global one configured in PaymentProcessorStorage.
+function resolveFeeReceiver(invoice: AdvancedPaymentProcessor): Address {
+  const invoiceReceiver = invoice.feeReceiver;
+  if (invoiceReceiver !== null) {
+    return Address.fromBytes(invoiceReceiver);
+  }
+
+  const config = StorageConfiguration.load(GLOBAL);
+  if (config != null && config.feeReceiver !== null) {
+    return Address.fromBytes(config.feeReceiver!);
+  }
+  return Address.zero();
+}
+
+// Credits the fee unless the best-effort payout failed earlier in this tx.
+function creditInvoiceFee(
+  invoice: AdvancedPaymentProcessor,
+  fee: BigInt,
+  event: ethereum.Event,
+): void {
+  const failedTx = invoice.feeTransferFailedTx;
+  if (failedTx !== null && failedTx.equals(event.transaction.hash)) return;
+  creditFee(resolveFeeReceiver(invoice), invoiceToken(invoice), fee, event);
 }
 
 function invoiceToken(invoice: AdvancedPaymentProcessor): Address {
@@ -249,6 +278,7 @@ export function handleDisputeSettled(event: DisputeSettledEvent): void {
   // the protocol fee is collected here.
   recordEscrowDelta(invoiceToken(invoice), priorBalance.neg());
   recordFee(invoiceToken(invoice), event.params.fee, event.transaction.hash);
+  creditInvoiceFee(invoice, event.params.fee, event);
 }
 
 export function handleRefunded(event: RefundedEvent): void {
@@ -294,6 +324,7 @@ export function handlePaymentReleased(event: PaymentReleasedEvent): void {
   // collected here.
   recordEscrowDelta(invoiceToken(invoice), priorBalance.neg());
   recordFee(invoiceToken(invoice), event.params.fee, event.transaction.hash);
+  creditInvoiceFee(invoice, event.params.fee, event);
 }
 
 export function handleUpdateReleaseTime(event: UpdateReleaseTimeEvent): void {
@@ -340,6 +371,9 @@ export function handleTransferFailed(event: TransferFailedEvent): void {
   const invoice = AdvancedPaymentProcessor.load(id);
   if (!invoice) return;
 
+  // This processor only emits TransferFailed for a failed fee payout, so the
+  // fee never reached the receiver and must not be credited at release.
+  invoice.feeTransferFailedTx = event.transaction.hash;
   invoice.lastActionTime = event.block.timestamp;
   invoice.save();
   saveInvoiceEvent(event, id, TRANSFER_FAILED, true);

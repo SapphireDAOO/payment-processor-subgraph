@@ -1,4 +1,4 @@
-import { BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import {
   InvoiceAccepted as InvoiceAcceptedEvent,
   InvoiceCanceled as InvoiceCanceledEvent,
@@ -9,8 +9,13 @@ import {
   InvoiceReleased as InvoiceReleasedEvent,
   TransferFailed as TransferFailedEvent,
   WithdrawalRetried as WithdrawalRetriedEvent,
+  SimplePaymentProcessor as SimplePaymentProcessorContract,
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
-import { InvoiceEvent, SimplePaymentProcessor } from "../generated/schema";
+import {
+  InvoiceEvent,
+  SimplePaymentProcessor,
+  StorageConfiguration,
+} from "../generated/schema";
 import {
   recordEscrowDelta,
   recordFee,
@@ -18,12 +23,14 @@ import {
   recordPaymentVolume,
 } from "./util/metrics";
 import { trackUser } from "./util/user";
+import { creditFee } from "./util/fees";
 import {
   ACCEPTED,
   CANCELED,
   CREATED,
   CREATOR,
   ETH,
+  GLOBAL,
   INVOICE_ACCEPTED,
   INVOICE_CANCELED,
   INVOICE_CREATED,
@@ -68,6 +75,28 @@ function isEscrowed(state: string): boolean {
 function reverseEscrow(wasEscrowed: boolean, amount: BigInt): void {
   if (!wasEscrowed) return;
   recordEscrowDelta(ETH, amount.neg());
+}
+
+// Mirrors the contract's _feeReceiverFor: the invoice's own receiver, falling
+// back to the global one configured in PaymentProcessorStorage.
+function resolveFeeReceiver(invoice: SimplePaymentProcessor): Address {
+  const invoiceReceiver = invoice.feeReceiver;
+  if (invoiceReceiver !== null) {
+    return Address.fromBytes(invoiceReceiver);
+  }
+
+  const config = StorageConfiguration.load(GLOBAL);
+  if (config != null && config.feeReceiver !== null) {
+    return Address.fromBytes(config.feeReceiver!);
+  }
+  return Address.zero();
+}
+
+// The simple processor pays its fee as wrapped native, so fee balances are
+// denominated in WETH rather than ETH.
+function feeToken(contractAddress: Address): Address {
+  const wethCall = SimplePaymentProcessorContract.bind(contractAddress).try_weth();
+  return wethCall.reverted ? Address.zero() : wethCall.value;
 }
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
@@ -184,12 +213,29 @@ export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
 
   // Protocol fee is collected when the payment is released to the seller.
   recordFee(ETH, event.params.fee, event.transaction.hash);
+
+  // _autoRelease pays the fee best-effort and emits TransferFailed before this
+  // event when it does not land, so skip crediting that case.
+  const failedTx = invoice.feeTransferFailedTx;
+  if (failedTx !== null && failedTx.equals(event.transaction.hash)) return;
+  creditFee(
+    resolveFeeReceiver(invoice),
+    feeToken(event.address),
+    event.params.fee,
+    event,
+  );
 }
 
 export function handleTransferFailed(event: TransferFailedEvent): void {
   const id = event.params.invoiceId.toString();
   const invoice = SimplePaymentProcessor.load(id);
   if (!invoice) return;
+
+  // The processor emits TransferFailed for a failed buyer refund, a failed burn
+  // and a failed fee payout; only the last one targets the fee receiver.
+  if (event.params.recipient.equals(resolveFeeReceiver(invoice))) {
+    invoice.feeTransferFailedTx = event.transaction.hash;
+  }
 
   invoice.lastActionTime = event.block.timestamp;
   invoice.save();
