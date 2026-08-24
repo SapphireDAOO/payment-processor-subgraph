@@ -11,7 +11,6 @@ import {
   WithdrawalRetried as WithdrawalRetriedEvent,
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
 import { InvoiceEvent, SimplePaymentProcessor } from "../generated/schema";
-import { getDefaultHoldPeriod } from "./payment-processor-storage";
 import {
   recordEscrowDelta,
   recordFee,
@@ -84,7 +83,7 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   invoice.price = event.params.invoice.price;
   invoice.contract = event.address;
   invoice.lastActionTime = event.block.timestamp;
-  invoice.invalidateAt = event.params.invoice.invalidateAt;
+  invoice.expiresAt = event.params.invoice.expiresAt;
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_CREATED);
@@ -102,7 +101,7 @@ export function handleInvoicePaid(event: InvoicePaidEvent): void {
   invoice.state = PAID;
   invoice.amountPaid = event.params.amountPaid;
   invoice.lastActionTime = event.block.timestamp;
-  invoice.expiresAt = event.params.expiresAt;
+  invoice.sellerActionDeadline = event.params.sellerActionDeadline;
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_PAID);
@@ -119,11 +118,8 @@ export function handleInvoiceAccepted(event: InvoiceAcceptedEvent): void {
 
   invoice.state = ACCEPTED;
   invoice.feeReceiver = event.params.feeReceiver;
+  invoice.releaseAt = event.params.releaseAt;
   invoice.lastActionTime = event.block.timestamp;
-
-  if (!invoice.releaseAt) {
-    invoice.releaseAt = event.block.timestamp.plus(getDefaultHoldPeriod());
-  }
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_ACCEPTED);

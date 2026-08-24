@@ -1,4 +1,4 @@
-import { BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { ethereum } from "@graphprotocol/graph-ts";
 import {
   AuthorizationUpdated,
   ConfigurationInitialized,
@@ -79,15 +79,4 @@ export function handlePaymentValidityDurationUpdated(
   const config = getConfiguration(event);
   config.paymentValidityDuration = event.params.validityDuration;
   config.save();
-}
-
-// The default hold period is read from the StorageConfiguration singleton, which
-// is kept current by this data source's config event handlers. Returns zero
-// until the relevant config event has been indexed.
-export function getDefaultHoldPeriod(): BigInt {
-  const config = StorageConfiguration.load(GLOBAL);
-  if (config == null || config.defaultHoldPeriod === null) {
-    return BigInt.zero();
-  }
-  return config.defaultHoldPeriod!;
 }

@@ -117,14 +117,14 @@
           { "name": "createdAt", "type": "uint40", "internalType": "uint40" },
           { "name": "paidAt", "type": "uint40", "internalType": "uint40" },
           { "name": "releaseAt", "type": "uint40", "internalType": "uint40" },
+          { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
           {
-            "name": "invalidateAt",
+            "name": "sellerActionDeadline",
             "type": "uint40",
             "internalType": "uint40"
           },
-          { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
           {
-            "name": "holdPeriod",
+            "name": "escrowHoldPeriod",
             "type": "uint32",
             "internalType": "uint32"
           },
@@ -330,6 +330,12 @@
         "type": "address",
         "indexed": true,
         "internalType": "address"
+      },
+      {
+        "name": "releaseAt",
+        "type": "uint40",
+        "indexed": false,
+        "internalType": "uint40"
       }
     ],
     "anonymous": false
@@ -371,14 +377,14 @@
           { "name": "createdAt", "type": "uint40", "internalType": "uint40" },
           { "name": "paidAt", "type": "uint40", "internalType": "uint40" },
           { "name": "releaseAt", "type": "uint40", "internalType": "uint40" },
+          { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
           {
-            "name": "invalidateAt",
+            "name": "sellerActionDeadline",
             "type": "uint40",
             "internalType": "uint40"
           },
-          { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
           {
-            "name": "holdPeriod",
+            "name": "escrowHoldPeriod",
             "type": "uint32",
             "internalType": "uint32"
           },
@@ -427,7 +433,7 @@
         "internalType": "uint256"
       },
       {
-        "name": "expiresAt",
+        "name": "sellerActionDeadline",
         "type": "uint40",
         "indexed": false,
         "internalType": "uint40"

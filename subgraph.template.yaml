@@ -24,7 +24,7 @@ dataSources:
         - name: PaymentProcessorStorage
           file: ./abis/PaymentProcessorStorage.json
       eventHandlers:
-        - event: InvoiceAccepted(indexed uint216,indexed address)
+        - event: InvoiceAccepted(indexed uint216,indexed address,uint40)
           handler: handleInvoiceAccepted
         - event: InvoiceCanceled(indexed uint216)
           handler: handleInvoiceCanceled

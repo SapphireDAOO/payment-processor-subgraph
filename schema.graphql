@@ -93,8 +93,8 @@ type SimplePaymentProcessor @entity(immutable: false) {
   buyer: User
   price: BigInt!
   amountPaid: BigInt
-  invalidateAt: BigInt
   expiresAt: BigInt
+  sellerActionDeadline: BigInt
   releaseAt: BigInt
   fee: BigInt
   feeReceiver: Bytes
