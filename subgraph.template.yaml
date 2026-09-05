@@ -100,6 +100,8 @@ dataSources:
           handler: handleOracleUpdated
         - event: PaymentReleased(indexed uint216,address,address,uint256,uint256)
           handler: handlePaymentReleased
+        - event: PaymentTokensRegistered(indexed uint216,address[])
+          handler: handlePaymentTokensRegistered
         - event: Refunded(indexed uint216,indexed uint256)
           handler: handleRefunded
         - event: TransferFailed(indexed uint216,indexed address,uint256)

@@ -118,6 +118,9 @@ type AdvancedPaymentProcessor @entity(immutable: false) {
   escrow: Bytes
   balance: BigInt
   paymentToken: PaymentToken
+  # Tokens the invoice may be paid in, registered at creation. The buyer pays
+  # with one of these, which then becomes `paymentToken`.
+  expectedPaymentTokens: [PaymentToken!]!
   releaseAt: BigInt
   amountReleased: BigInt
   amountRefunded: BigInt

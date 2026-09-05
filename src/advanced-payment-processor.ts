@@ -12,6 +12,7 @@ import {
   MetaInvoiceCreated as MetaInvoiceCreatedEvent,
   OracleUpdated as OracleUpdatedEvent,
   PaymentReleased as PaymentReleasedEvent,
+  PaymentTokensRegistered as PaymentTokensRegisteredEvent,
   Refunded as RefundedEvent,
   TransferFailed as TransferFailedEvent,
   UpdateReleaseTime as UpdateReleaseTimeEvent,
@@ -151,6 +152,8 @@ export function handleAdvancedPaymentProcessorCreated(
   invoice.amountRefunded = ZERO;
   invoice.sellerAmountReceivedAfterDispute = ZERO;
   invoice.buyerAmountReceivedAfterDispute = ZERO;
+  // Populated by PaymentTokensRegistered, emitted right after this event.
+  invoice.expectedPaymentTokens = [];
 
   const metaInvoiceId = event.params.invoice.metaInvoiceId;
   if (metaInvoiceId.gt(ZERO)) {
@@ -206,6 +209,25 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   // release or dispute settlement.
   recordPaymentVolume(event.params.paymentToken, amountPaid);
   recordEscrowDelta(event.params.paymentToken, amountPaid);
+}
+
+export function handlePaymentTokensRegistered(
+  event: PaymentTokensRegisteredEvent,
+): void {
+  const id = event.params.invoiceId.toString();
+  const invoice = AdvancedPaymentProcessor.load(id);
+  if (!invoice) return;
+
+  // The tokens the seller will accept for this invoice; the buyer pays with one
+  // of them, which becomes `paymentToken` at InvoicePaid.
+  const tokens = event.params.paymentTokens;
+  const tokenIds = new Array<string>();
+  for (let i = 0; i < tokens.length; i++) {
+    tokenIds.push(getOrCreatePaymentToken(tokens[i]).id);
+  }
+
+  invoice.expectedPaymentTokens = tokenIds;
+  invoice.save();
 }
 
 export function handleInvoiceCanceled(event: InvoiceCanceledEvent): void {
