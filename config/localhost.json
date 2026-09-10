@@ -1,31 +1,31 @@
 {
   "network": "localhost",
   "simplePaymentProcessor": {
-    "address": "0xC3bDDA2D7f231Dc48960ED61B649f971afd28010",
+    "address": "0x75c0f4a0aF42101E64B493B71cEFEbC359B90F25",
     "startBlock": 0
   },
   "advancedPaymentProcessor": {
-    "address": "0xAA845a76bf1a7e27e5e06071e2e8C8a8F4355C20",
+    "address": "0xcDEf5a4084d380CAbf0AD88421843dCb1b1a1298",
     "startBlock": 0
   },
   "paymentProcessorStorage": {
-    "address": "0x9B486c746213EcD7A1BF449E01DeB43fC8BD3834",
+    "address": "0x9209Fb3710015c3b4c780cef605322457c7C863c",
     "startBlock": 0
   },
   "notes": {
-    "address": "0x8C08B086d13F50C032f6DaB86785E7a78D437Fd1",
+    "address": "0xce270FA8D222300a2148477f924669d4b3a0523e",
     "startBlock": 0
   },
   "multiSig": {
-    "address": "0x05c405ef0dbBfB3005bBcd35E0b1911052731A0E",
+    "address": "0xEE79d9E7EDBEf7c927A6A58EBc2a3b4c927C1384",
     "startBlock": 0
   },
   "oracleManager": {
-    "address": "0x457181a280b98Ba8ACc9C262d7a78e5ED2670E60",
+    "address": "0xe73d6010E56BDe831321667Db88A03255e82106b",
     "startBlock": 0
   },
   "sweeper": {
-    "address": "0xcA32aB54b0503649b47d6b46c9ab5f285BbE5D0B",
+    "address": "0x0E078853ef04266c5d09F9cD21DFA761134B13f6",
     "startBlock": 0
   }
 }
