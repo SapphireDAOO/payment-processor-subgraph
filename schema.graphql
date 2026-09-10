@@ -72,8 +72,9 @@ type InvoiceEvent @entity(immutable: true) {
 
 type User @entity(immutable: false) {
   id: ID!
-  # UTC day index (timestamp / 86400) of the user's most recent observed
-  # activity; used to emit at most one ActiveUser point per user per day.
+  publicKey: Bytes
+  publicKeyVersion: Int
+  countedAsNewUser: Boolean!
   lastActiveDay: BigInt
   ownedSimpleInvoices: [SimplePaymentProcessor!]! @derivedFrom(field: "seller")
   paidSimpleInvoices: [SimplePaymentProcessor!]! @derivedFrom(field: "buyer")

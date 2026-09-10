@@ -156,6 +156,7 @@ dataSources:
       entities:
         - Note
         - NoteOpenState
+        - User
       abis:
         - name: Notes
           file: ./abis/Notes.json
@@ -164,6 +165,8 @@ dataSources:
           handler: handleNoteCreated
         - event: NoteStateChanged(indexed uint216,indexed uint256,indexed address,bool)
           handler: handleNoteStateChanged
+        - event: PublicKeySet(indexed address,bytes,uint8)
+          handler: handlePublicKeySet
       file: ./src/notes.ts
   - kind: ethereum
     name: MultiSig

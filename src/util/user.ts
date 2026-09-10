@@ -13,6 +13,13 @@ export function trackUser(
 
   if (user == null) {
     user = new User(id);
+    user.countedAsNewUser = false;
+  }
+
+  // A user created by setPublicKey has not been counted yet, so key the
+  // NewUser point off the flag rather than off entity creation.
+  if (!user.countedAsNewUser) {
+    user.countedAsNewUser = true;
     user.save();
     recordNewUser(address, role);
   }

@@ -78,6 +78,25 @@
   },
   {
     "type": "function",
+    "name": "getPublicKey",
+    "inputs": [
+      { "name": "_account", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [
+      {
+        "name": "publicKey",
+        "type": "tuple",
+        "internalType": "struct INotes.PublicKey",
+        "components": [
+          { "name": "key", "type": "bytes", "internalType": "bytes" },
+          { "name": "version", "type": "uint8", "internalType": "uint8" }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "isOpened",
     "inputs": [
       { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
@@ -117,6 +136,15 @@
       { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
       { "name": "_account", "type": "address", "internalType": "address" },
       { "name": "_noteId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setPublicKey",
+    "inputs": [
+      { "name": "_publicKey", "type": "bytes", "internalType": "bytes" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -198,7 +226,35 @@
     ],
     "anonymous": false
   },
+  {
+    "type": "event",
+    "name": "PublicKeySet",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "publicKey",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
+      },
+      {
+        "name": "version",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "uint8"
+      }
+    ],
+    "anonymous": false
+  },
   { "type": "error", "name": "EmptyContent", "inputs": [] },
+  { "type": "error", "name": "InvalidPublicKey", "inputs": [] },
   { "type": "error", "name": "NoteNotFound", "inputs": [] },
+  { "type": "error", "name": "PublicKeyAlreadySet", "inputs": [] },
+  { "type": "error", "name": "PublicKeyMismatch", "inputs": [] },
   { "type": "error", "name": "Unauthorized", "inputs": [] }
 ]

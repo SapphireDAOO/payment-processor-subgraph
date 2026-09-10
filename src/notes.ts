@@ -1,6 +1,10 @@
 import { BigInt } from "@graphprotocol/graph-ts";
-import { NoteCreated, NoteStateChanged } from "../generated/Notes/Notes";
-import { Note, NoteOpenState } from "../generated/schema";
+import {
+  NoteCreated,
+  NoteStateChanged,
+  PublicKeySet,
+} from "../generated/Notes/Notes";
+import { Note, NoteOpenState, User } from "../generated/schema";
 
 function noteEntityId(invoiceId: BigInt, noteId: BigInt): string {
   return invoiceId.toString() + "-" + noteId.toString();
@@ -49,4 +53,21 @@ export function handleNoteStateChanged(event: NoteStateChanged): void {
   state.updatedAtTx = event.transaction.hash;
 
   state.save();
+}
+
+export function handlePublicKeySet(event: PublicKeySet): void {
+  const id = event.params.account.toHex();
+
+  let user = User.load(id);
+  if (user == null) {
+    user = new User(id);
+    // Registering a key is not an invoice action, so it does not count towards
+    // NewUser; trackUser records that on the account's first invoice.
+    user.countedAsNewUser = false;
+  }
+
+  // Set once by the contract, and carries the key version current at that time.
+  user.publicKey = event.params.publicKey;
+  user.publicKeyVersion = event.params.version;
+  user.save();
 }
