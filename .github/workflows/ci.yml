@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build (${{ matrix.network }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        network: [localhost, base-sepolia]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Render subgraph.yaml for ${{ matrix.network }}
+        run: bun run prepare:${{ matrix.network }}
+
+      - name: Codegen
+        run: bun run codegen
+
+      - name: Build
+        run: bun run build
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Render subgraph.yaml
+        run: bun run prepare:localhost
+
+      - name: Codegen
+        run: bun run codegen
+
+      - name: Unit tests
+        run: bun run test
+
+  config:
+    name: config
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Every network config covers every data source
+        run: |
+          python3 - <<'PY'
+          import json, re, sys, glob
+
+          template = open("subgraph.template.yaml").read()
+          # Placeholders look like {{simplePaymentProcessor.address}}.
+          required = sorted({
+              m for m in re.findall(r"\{\{(\w+)\.(?:address|startBlock)\}\}", template)
+          })
+
+          failed = False
+          for path in sorted(glob.glob("config/*.json")):
+              cfg = json.load(open(path))
+              missing = [k for k in required if k not in cfg]
+              bad = [
+                  k for k in required
+                  if k in cfg and not re.fullmatch(r"0x[0-9a-fA-F]{40}", cfg[k].get("address", ""))
+              ]
+              if missing or bad:
+                  failed = True
+                  print(f"{path}:")
+                  for k in missing:
+                      print(f"  missing data source: {k}")
+                  for k in bad:
+                      print(f"  malformed address:   {k} = {cfg[k].get('address')!r}")
+              else:
+                  print(f"{path}: ok ({len(required)} data sources)")
+
+          sys.exit(1 if failed else 0)
+          PY
+
+      - name: subgraph.yaml is generated, not committed
+        run: |
+          if git ls-files --error-unmatch subgraph.yaml >/dev/null 2>&1; then
+            echo "subgraph.yaml is tracked, but it is generated per network." >&2
+            echo "Remove it with: git rm --cached subgraph.yaml" >&2
+            exit 1
+          fi
+          echo "ok: subgraph.yaml is not tracked"
