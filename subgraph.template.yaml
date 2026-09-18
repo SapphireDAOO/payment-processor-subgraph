@@ -123,6 +123,8 @@ dataSources:
       entities:
         - StorageConfiguration
         - AuthorizedAddress
+        - PauseAction
+        - PauseState
       abis:
         - name: PaymentProcessorStorage
           file: ./abis/PaymentProcessorStorage.json
@@ -131,6 +133,10 @@ dataSources:
           handler: handleAuthorizationUpdated
         - event: ConfigurationInitialized((address,uint96,address,address,uint96))
           handler: handleConfigurationInitialized
+        - event: EmergencyPauseApproved(indexed address)
+          handler: handleEmergencyPauseApproved
+        - event: EmergencyPaused(indexed address,uint256)
+          handler: handleEmergencyPaused
         - event: FeeRateUpdated(uint96)
           handler: handleFeeRateUpdated
         - event: FeeReceiverUpdated(indexed address)
@@ -139,8 +145,12 @@ dataSources:
           handler: handleGasThresholdUpdated
         - event: OwnershipTransferred(indexed address,indexed address)
           handler: handleOwnershipTransferred
+        - event: Paused(indexed address)
+          handler: handlePaused
         - event: PaymentValidityDurationUpdated(uint256)
           handler: handlePaymentValidityDurationUpdated
+        - event: Unpaused(indexed address)
+          handler: handleUnpaused
       file: ./src/payment-processor-storage.ts
   - kind: ethereum
     name: Notes

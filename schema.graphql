@@ -235,6 +235,37 @@ type StorageConfiguration @entity(immutable: false) {
   updatedAtBlock: BigInt
 }
 
+enum PauseActionType {
+  PAUSED
+  UNPAUSED
+  EMERGENCY_PAUSED
+  EMERGENCY_PAUSE_APPROVED
+}
+
+
+type PauseAction @entity(immutable: true) {
+  id: ID!
+  type: PauseActionType!
+  account: Bytes!
+  expiry: BigInt
+  timestamp: BigInt!
+  block: BigInt!
+  txHash: Bytes!
+}
+
+# Singleton (id: "global") holding the current pause state.
+type PauseState @entity(immutable: false) {
+  id: ID!
+  ownerPaused: Boolean!
+  emergencyPauseExpiry: BigInt
+  emergencyPausedBy: Bytes
+  emergencyPausedAt: BigInt
+  lastAction: PauseActionType
+  lastActionBy: Bytes
+  lastActionAt: BigInt
+  lastActionTx: Bytes
+}
+
 # Per-account authorization state managed via setAuthorizedAddress
 # (id: account address).
 type AuthorizedAddress @entity(immutable: false) {

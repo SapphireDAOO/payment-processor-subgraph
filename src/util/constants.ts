@@ -49,6 +49,12 @@ export const UPDATE_HOLD_PERIOD = "UPDATE_HOLD_PERIOD";
 export const UPDATE_RELEASE_TIME = "UPDATE_RELEASE_TIME";
 export const WITHDRAWAL_RETRIED = "WITHDRAWAL_RETRIED";
 
+// PauseActionType values
+export const PAUSED_ACTION = "PAUSED";
+export const UNPAUSED_ACTION = "UNPAUSED";
+export const EMERGENCY_PAUSED_ACTION = "EMERGENCY_PAUSED";
+export const EMERGENCY_PAUSE_APPROVED_ACTION = "EMERGENCY_PAUSE_APPROVED";
+
 // InvoiceType values
 export const SIMPLE = "SIMPLE";
 export const ADVANCED = "ADVANCED";
