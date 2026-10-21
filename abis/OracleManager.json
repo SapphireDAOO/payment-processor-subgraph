@@ -24,6 +24,26 @@
   },
   {
     "type": "function",
+    "name": "FEED_DECIMAL",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint8", "internalType": "uint8" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "PP_STORAGE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract PaymentProcessorStorage"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "SEQUENCER_GRACE_PERIOD",
     "inputs": [],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
@@ -31,11 +51,9 @@
   },
   {
     "type": "function",
-    "name": "getSequencerUptimeFeed",
+    "name": "SEQUENCER_UPTIME_FEED",
     "inputs": [],
-    "outputs": [
-      { "name": "feed", "type": "address", "internalType": "address" }
-    ],
+    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
     "stateMutability": "view"
   },
   {
@@ -53,14 +71,48 @@
   },
   {
     "type": "function",
-    "name": "ppStorage",
-    "inputs": [],
-    "outputs": [
+    "name": "getUsdPerTokenBatch",
+    "inputs": [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "contract PaymentProcessorStorage"
+        "name": "_paymentTokens",
+        "type": "address[]",
+        "internalType": "address[]"
       }
+    ],
+    "outputs": [
+      { "name": "prices", "type": "uint256[]", "internalType": "uint256[]" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getValueInCurrency",
+    "inputs": [
+      {
+        "name": "_paymentToken",
+        "type": "address",
+        "internalType": "address"
+      },
+      { "name": "_amount", "type": "uint256", "internalType": "uint256" },
+      {
+        "name": "_toAggregator",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      { "name": "value", "type": "uint256", "internalType": "uint256" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isSupportedToken",
+    "inputs": [
+      { "name": "_token", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [
+      { "name": "supported", "type": "bool", "internalType": "bool" }
     ],
     "stateMutability": "view"
   },
@@ -79,21 +131,9 @@
             "type": "address",
             "internalType": "address"
           },
-          { "name": "heartbeat", "type": "uint96", "internalType": "uint96" }
+          { "name": "heartbeat", "type": "uint96", "internalType": "uint96" },
+          { "name": "allowed", "type": "bool", "internalType": "bool" }
         ]
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setSequencerUptimeFeed",
-    "inputs": [
-      {
-        "name": "_sequencerUptimeFeed",
-        "type": "address",
-        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -124,7 +164,7 @@
     ],
     "anonymous": false
   },
-  { "type": "error", "name": "InvalidHeartbeat", "inputs": [] },
+  { "type": "error", "name": "InvalidAggregator", "inputs": [] },
   { "type": "error", "name": "InvalidPrice", "inputs": [] },
   { "type": "error", "name": "NotAuthorized", "inputs": [] },
   { "type": "error", "name": "SequencerDown", "inputs": [] },

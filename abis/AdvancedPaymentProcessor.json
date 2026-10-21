@@ -11,6 +11,33 @@
     ],
     "stateMutability": "nonpayable"
   },
+  { "type": "receive", "stateMutability": "payable" },
+  {
+    "type": "function",
+    "name": "ORACLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IOracleManager"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "PP_STORAGE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IPaymentProcessorStorage"
+      }
+    ],
+    "stateMutability": "view"
+  },
   {
     "type": "function",
     "name": "_getDecimals",
@@ -66,7 +93,7 @@
           { "name": "seller", "type": "address", "internalType": "address" },
           { "name": "price", "type": "uint256", "internalType": "uint256" },
           {
-            "name": "escrowHoldPeriod",
+            "name": "holdPeriod",
             "type": "uint32",
             "internalType": "uint32"
           },
@@ -100,7 +127,7 @@
           { "name": "seller", "type": "address", "internalType": "address" },
           { "name": "price", "type": "uint256", "internalType": "uint256" },
           {
-            "name": "escrowHoldPeriod",
+            "name": "holdPeriod",
             "type": "uint32",
             "internalType": "uint32"
           },
@@ -144,12 +171,12 @@
             "type": "uint8",
             "internalType": "uint8"
           },
+          { "name": "feeRate", "type": "uint16", "internalType": "uint16" },
           {
-            "name": "escrowHoldPeriod",
+            "name": "holdPeriod",
             "type": "uint32",
             "internalType": "uint32"
           },
-          { "name": "feeRate", "type": "uint16", "internalType": "uint16" },
           {
             "name": "metaInvoiceId",
             "type": "uint216",
@@ -174,7 +201,8 @@
             "internalType": "uint256"
           },
           { "name": "price", "type": "uint256", "internalType": "uint256" },
-          { "name": "balance", "type": "uint256", "internalType": "uint256" }
+          { "name": "balance", "type": "uint256", "internalType": "uint256" },
+          { "name": "orderId", "type": "string", "internalType": "string" }
         ]
       }
     ],
@@ -203,19 +231,6 @@
             "internalType": "uint216[]"
           }
         ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getMinimumPrice",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "currentMinimumPrice",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -300,19 +315,8 @@
         "internalType": "address"
       }
     ],
-    "outputs": [{ "name": "allowed", "type": "bool", "internalType": "bool" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "oracle",
-    "inputs": [],
     "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IOracleManager"
-      }
+      { "name": "allowed", "type": "bool", "internalType": "bool" }
     ],
     "stateMutability": "view"
   },
@@ -373,19 +377,6 @@
   },
   {
     "type": "function",
-    "name": "ppStorage",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IPaymentProcessorStorage"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "refund",
     "inputs": [
       { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
@@ -418,28 +409,6 @@
     "inputs": [
       { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" },
       { "name": "_holdPeriod", "type": "uint256", "internalType": "uint256" }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setMinimumPrice",
-    "inputs": [
-      {
-        "name": "_newMinimumPrice",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setOracle",
-    "inputs": [
-      { "name": "_oracle", "type": "address", "internalType": "address" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -925,5 +894,6 @@
   { "type": "error", "name": "SequencerDown", "inputs": [] },
   { "type": "error", "name": "StalePrice", "inputs": [] },
   { "type": "error", "name": "StalePriceFeed", "inputs": [] },
+  { "type": "error", "name": "UnexpectedNativeTransfer", "inputs": [] },
   { "type": "error", "name": "UnsupportedToken", "inputs": [] }
 ]

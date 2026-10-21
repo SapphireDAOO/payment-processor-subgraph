@@ -8,20 +8,51 @@
         "internalType": "address"
       },
       {
-        "name": "_minimumInvoicePrice",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
         "name": "_notesAddress",
         "type": "address",
         "internalType": "address"
       },
-      { "name": "_wethAddress", "type": "address", "internalType": "address" }
+      {
+        "name": "_automationAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_escrowHoldPeriod",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
     ],
     "stateMutability": "nonpayable"
   },
   { "type": "receive", "stateMutability": "payable" },
+  {
+    "type": "function",
+    "name": "AUTOMATION",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ESCROW_HOLD_PERIOD",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint32", "internalType": "uint32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "PP_STORAGE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IPaymentProcessorStorage"
+      }
+    ],
+    "stateMutability": "view"
+  },
   {
     "type": "function",
     "name": "acceptPayment",
@@ -62,7 +93,6 @@
     "name": "createInvoice",
     "inputs": [
       { "name": "_price", "type": "uint256", "internalType": "uint256" },
-      { "name": "_holdPeriod", "type": "uint32", "internalType": "uint32" },
       { "name": "_storageRef", "type": "bytes", "internalType": "bytes" },
       { "name": "_share", "type": "bool", "internalType": "bool" }
     ],
@@ -70,32 +100,6 @@
       { "name": "invoiceId", "type": "uint216", "internalType": "uint216" }
     ],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "getAutomation",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "automationAddress",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getDecisionWindow",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "decisionWindowValue",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -122,11 +126,6 @@
             "name": "sellerActionDeadline",
             "type": "uint40",
             "internalType": "uint40"
-          },
-          {
-            "name": "escrowHoldPeriod",
-            "type": "uint32",
-            "internalType": "uint32"
           },
           { "name": "state", "type": "uint8", "internalType": "uint8" },
           {
@@ -155,16 +154,8 @@
     "name": "getItems",
     "inputs": [],
     "outputs": [
-      { "name": "items", "type": "uint216[]", "internalType": "uint216[]" }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getMinimumInvoiceValue",
-    "inputs": [],
-    "outputs": [
-      { "name": "minimumValue", "type": "uint256", "internalType": "uint256" }
+      { "name": "id", "type": "uint216[]", "internalType": "uint216[]" },
+      { "name": "dueAt", "type": "uint40[]", "internalType": "uint40[]" }
     ],
     "stateMutability": "view"
   },
@@ -209,19 +200,6 @@
   },
   {
     "type": "function",
-    "name": "ppStorage",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IPaymentProcessorStorage"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "processDueTasks",
     "inputs": [],
     "outputs": [],
@@ -253,54 +231,6 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setAutomation",
-    "inputs": [
-      {
-        "name": "_automationAddress",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setDecisionWindow",
-    "inputs": [
-      {
-        "name": "_newDecisionWindow",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setMinimumInvoiceValue",
-    "inputs": [
-      {
-        "name": "_newMinimumInvoiceValue",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "weth",
-    "inputs": [],
-    "outputs": [
-      { "name": "", "type": "address", "internalType": "contract IWETH" }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "event",
@@ -582,6 +512,7 @@
   { "type": "error", "name": "InvalidFeeAuthorization", "inputs": [] },
   { "type": "error", "name": "InvalidFeeReceiver", "inputs": [] },
   { "type": "error", "name": "InvalidHeapPosition", "inputs": [] },
+  { "type": "error", "name": "InvalidHoldPeriod", "inputs": [] },
   {
     "type": "error",
     "name": "InvalidInvoiceState",

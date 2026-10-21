@@ -12,7 +12,7 @@
   },
   {
     "type": "function",
-    "name": "ppStorage",
+    "name": "PP_STORAGE",
     "inputs": [],
     "outputs": [
       {

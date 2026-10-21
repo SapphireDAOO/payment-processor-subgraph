@@ -129,24 +129,22 @@ dataSources:
       eventHandlers:
         - event: AuthorizationUpdated(indexed address,bool)
           handler: handleAuthorizationUpdated
-        - event: ConfigurationInitialized((address,uint96,address,address,uint96))
+        - event: ConfigurationInitialized((address,address,address,address))
           handler: handleConfigurationInitialized
         - event: EmergencyPauseApproved(indexed address)
           handler: handleEmergencyPauseApproved
         - event: EmergencyPaused(indexed address,uint256)
           handler: handleEmergencyPaused
-        - event: FeeRateUpdated(uint96)
-          handler: handleFeeRateUpdated
-        - event: FeeReceiverUpdated(indexed address)
-          handler: handleFeeReceiverUpdated
-        - event: GasThresholdUpdated(uint96)
-          handler: handleGasThresholdUpdated
+        - event: EmergencyPauserUpdated(indexed address)
+          handler: handleEmergencyPauserUpdated
+        - event: FeeSignerUpdated(indexed address)
+          handler: handleFeeSignerUpdated
+        - event: IntermediatedPlatformsOperatorUpdated(indexed address)
+          handler: handleIntermediatedPlatformsOperatorUpdated
         - event: OwnershipTransferred(indexed address,indexed address)
           handler: handleOwnershipTransferred
         - event: Paused(indexed address)
           handler: handlePaused
-        - event: PaymentValidityDurationUpdated(uint256)
-          handler: handlePaymentValidityDurationUpdated
         - event: Unpaused(indexed address)
           handler: handleUnpaused
       file: ./src/payment-processor-storage.ts

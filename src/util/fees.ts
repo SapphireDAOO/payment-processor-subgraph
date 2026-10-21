@@ -2,9 +2,22 @@ import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import {
   FeeReceiver,
   FeeReceiverTokenBalance,
+  StorageConfiguration,
 } from "../../generated/schema";
 import { getOrCreatePaymentToken } from "./metrics";
-import { ZERO } from "./constants";
+import { GLOBAL, ZERO } from "./constants";
+
+// Both processors wrap a native fee into WETH before paying it out, so fee
+// balances for native payments are denominated in WETH rather than ETH.
+export function feeTokenFor(paymentToken: Address): Address {
+  if (!paymentToken.equals(Address.zero())) return paymentToken;
+
+  const config = StorageConfiguration.load(GLOBAL);
+  if (config != null && config.weth !== null) {
+    return Address.fromBytes(config.weth!);
+  }
+  return Address.zero();
+}
 
 function getOrCreateFeeReceiver(
   receiver: Address,

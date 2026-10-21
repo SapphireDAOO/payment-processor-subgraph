@@ -9,7 +9,6 @@ import {
   InvoiceReleased as InvoiceReleasedEvent,
   TransferFailed as TransferFailedEvent,
   WithdrawalRetried as WithdrawalRetriedEvent,
-  SimplePaymentProcessor as SimplePaymentProcessorContract,
 } from "../generated/SimplePaymentProcessor/SimplePaymentProcessor";
 import {
   InvoiceEvent,
@@ -23,7 +22,7 @@ import {
   recordPaymentVolume,
 } from "./util/metrics";
 import { trackUser } from "./util/user";
-import { creditFee } from "./util/fees";
+import { creditFee, feeTokenFor } from "./util/fees";
 import {
   ACCEPTED,
   CANCELED,
@@ -90,13 +89,6 @@ function resolveFeeReceiver(invoice: SimplePaymentProcessor): Address {
     return Address.fromBytes(config.feeReceiver!);
   }
   return Address.zero();
-}
-
-// The simple processor pays its fee as wrapped native, so fee balances are
-// denominated in WETH rather than ETH.
-function feeToken(contractAddress: Address): Address {
-  const wethCall = SimplePaymentProcessorContract.bind(contractAddress).try_weth();
-  return wethCall.reverted ? Address.zero() : wethCall.value;
 }
 
 export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
@@ -220,7 +212,7 @@ export function handleInvoiceReleased(event: InvoiceReleasedEvent): void {
   if (failedTx !== null && failedTx.equals(event.transaction.hash)) return;
   creditFee(
     resolveFeeReceiver(invoice),
-    feeToken(event.address),
+    feeTokenFor(ETH),
     event.params.fee,
     event,
   );

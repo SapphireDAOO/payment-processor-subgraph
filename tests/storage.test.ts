@@ -1,4 +1,4 @@
-import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { Address, ethereum } from "@graphprotocol/graph-ts";
 import {
   assert,
   beforeEach,
@@ -10,19 +10,22 @@ import {
 import {
   AuthorizationUpdated,
   ConfigurationInitialized,
-  FeeRateUpdated,
-  FeeReceiverUpdated,
+  FeeSignerUpdated,
+  IntermediatedPlatformsOperatorUpdated,
 } from "../generated/PaymentProcessorStorage/PaymentProcessorStorage";
 import {
   handleAuthorizationUpdated,
   handleConfigurationInitialized,
-  handleFeeRateUpdated,
-  handleFeeReceiverUpdated,
+  handleFeeSignerUpdated,
+  handleIntermediatedPlatformsOperatorUpdated,
 } from "../src/payment-processor-storage";
 
 const OWNER = "0x0000000000000000000000000000000000000001";
 const RECEIVER = "0x00000000000000000000000000000000000000cc";
 const OPERATOR = "0x00000000000000000000000000000000000000c2";
+const NEW_OPERATOR = "0x00000000000000000000000000000000000000c3";
+const WETH = "0x00000000000000000000000000000000000000bb";
+const SIGNER = "0x00000000000000000000000000000000000000f5";
 const ACCOUNT = "0x00000000000000000000000000000000000000a1";
 const CONFIG = "StorageConfiguration";
 const ID = "global";
@@ -31,13 +34,12 @@ function configInitializedEvent(): ConfigurationInitialized {
   const event = changetype<ConfigurationInitialized>(newMockEvent());
   event.parameters = new Array<ethereum.EventParam>();
 
-  // struct Configuration(owner, feeRate, feeReceiver, operator, gasThreshold)
+  // struct Configuration(owner, feeReceiver, intermediatedPlatformsOperator, weth)
   const tuple = new ethereum.Tuple();
   tuple.push(ethereum.Value.fromAddress(Address.fromString(OWNER)));
-  tuple.push(ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(500)));
   tuple.push(ethereum.Value.fromAddress(Address.fromString(RECEIVER)));
   tuple.push(ethereum.Value.fromAddress(Address.fromString(OPERATOR)));
-  tuple.push(ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(21000)));
+  tuple.push(ethereum.Value.fromAddress(Address.fromString(WETH)));
 
   event.parameters.push(
     new ethereum.EventParam("config", ethereum.Value.fromTuple(tuple)),
@@ -45,25 +47,28 @@ function configInitializedEvent(): ConfigurationInitialized {
   return event;
 }
 
-function feeReceiverUpdatedEvent(receiver: string): FeeReceiverUpdated {
-  const event = changetype<FeeReceiverUpdated>(newMockEvent());
+function operatorUpdatedEvent(
+  operator: string,
+): IntermediatedPlatformsOperatorUpdated {
+  const event =
+    changetype<IntermediatedPlatformsOperatorUpdated>(newMockEvent());
   event.parameters = new Array<ethereum.EventParam>();
   event.parameters.push(
     new ethereum.EventParam(
-      "feeReceiver",
-      ethereum.Value.fromAddress(Address.fromString(receiver)),
+      "intermediatedPlatformsOperator",
+      ethereum.Value.fromAddress(Address.fromString(operator)),
     ),
   );
   return event;
 }
 
-function feeRateUpdatedEvent(rate: i32): FeeRateUpdated {
-  const event = changetype<FeeRateUpdated>(newMockEvent());
+function feeSignerUpdatedEvent(signer: string): FeeSignerUpdated {
+  const event = changetype<FeeSignerUpdated>(newMockEvent());
   event.parameters = new Array<ethereum.EventParam>();
   event.parameters.push(
     new ethereum.EventParam(
-      "feeRate",
-      ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(rate)),
+      "feeSigner",
+      ethereum.Value.fromAddress(Address.fromString(signer)),
     ),
   );
   return event;
@@ -99,20 +104,28 @@ describe("storage configuration", () => {
     handleConfigurationInitialized(configInitializedEvent());
 
     assert.fieldEquals(CONFIG, ID, "owner", OWNER);
-    assert.fieldEquals(CONFIG, ID, "feeRate", "500");
     assert.fieldEquals(CONFIG, ID, "feeReceiver", RECEIVER);
-    assert.fieldEquals(CONFIG, ID, "gasThreshold", "21000");
+    assert.fieldEquals(CONFIG, ID, "intermediatedPlatformsOperator", OPERATOR);
+    assert.fieldEquals(CONFIG, ID, "weth", WETH);
   });
 
   test("later events update the singleton in place", () => {
     handleConfigurationInitialized(configInitializedEvent());
-    handleFeeReceiverUpdated(feeReceiverUpdatedEvent(OPERATOR));
-    handleFeeRateUpdated(feeRateUpdatedEvent(250));
+    handleIntermediatedPlatformsOperatorUpdated(
+      operatorUpdatedEvent(NEW_OPERATOR),
+    );
+    handleFeeSignerUpdated(feeSignerUpdatedEvent(SIGNER));
 
-    assert.fieldEquals(CONFIG, ID, "feeReceiver", OPERATOR);
-    assert.fieldEquals(CONFIG, ID, "feeRate", "250");
+    assert.fieldEquals(
+      CONFIG,
+      ID,
+      "intermediatedPlatformsOperator",
+      NEW_OPERATOR,
+    );
+    assert.fieldEquals(CONFIG, ID, "feeSigner", SIGNER);
     // Untouched fields survive.
     assert.fieldEquals(CONFIG, ID, "owner", OWNER);
+    assert.fieldEquals(CONFIG, ID, "weth", WETH);
     assert.entityCount(CONFIG, 1);
   });
 

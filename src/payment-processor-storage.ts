@@ -4,12 +4,11 @@ import {
   ConfigurationInitialized,
   EmergencyPauseApproved,
   EmergencyPaused,
-  FeeRateUpdated,
-  FeeReceiverUpdated,
-  GasThresholdUpdated,
+  EmergencyPauserUpdated,
+  FeeSignerUpdated,
+  IntermediatedPlatformsOperatorUpdated,
   OwnershipTransferred,
   Paused,
-  PaymentValidityDurationUpdated,
   Unpaused,
 } from "../generated/PaymentProcessorStorage/PaymentProcessorStorage";
 import {
@@ -138,40 +137,37 @@ export function handleConfigurationInitialized(
   const c = event.params.config;
   const config = getConfiguration(event);
   config.owner = c.owner;
-  config.feeRate = c.feeRate;
   config.feeReceiver = c.feeReceiver;
-  config.gasThreshold = c.gasThreshold;
+  config.intermediatedPlatformsOperator = c.intermediatedPlatformsOperator;
+  config.weth = c.weth;
   config.save();
 }
 
-export function handleFeeRateUpdated(event: FeeRateUpdated): void {
+export function handleIntermediatedPlatformsOperatorUpdated(
+  event: IntermediatedPlatformsOperatorUpdated,
+): void {
   const config = getConfiguration(event);
-  config.feeRate = event.params.feeRate;
+  config.intermediatedPlatformsOperator =
+    event.params.intermediatedPlatformsOperator;
   config.save();
 }
 
-export function handleFeeReceiverUpdated(event: FeeReceiverUpdated): void {
+export function handleFeeSignerUpdated(event: FeeSignerUpdated): void {
   const config = getConfiguration(event);
-  config.feeReceiver = event.params.feeReceiver;
+  config.feeSigner = event.params.feeSigner;
   config.save();
 }
 
-export function handleGasThresholdUpdated(event: GasThresholdUpdated): void {
+export function handleEmergencyPauserUpdated(
+  event: EmergencyPauserUpdated,
+): void {
   const config = getConfiguration(event);
-  config.gasThreshold = event.params.gasThreshold;
+  config.emergencyPauser = event.params.emergencyPauser;
   config.save();
 }
 
 export function handleOwnershipTransferred(event: OwnershipTransferred): void {
   const config = getConfiguration(event);
   config.owner = event.params.newOwner;
-  config.save();
-}
-
-export function handlePaymentValidityDurationUpdated(
-  event: PaymentValidityDurationUpdated,
-): void {
-  const config = getConfiguration(event);
-  config.paymentValidityDuration = event.params.validityDuration;
   config.save();
 }

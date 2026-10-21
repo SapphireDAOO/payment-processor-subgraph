@@ -227,12 +227,12 @@ type MultiSigApproval @entity(immutable: false) {
 type StorageConfiguration @entity(immutable: false) {
   id: ID!
   owner: Bytes
-  feeRate: BigInt
   feeReceiver: Bytes
-  defaultHoldPeriod: BigInt
-  marketplace: Bytes
-  gasThreshold: BigInt
-  paymentValidityDuration: BigInt
+  intermediatedPlatformsOperator: Bytes
+  # Wrapped native token both processors pay platform fees in.
+  weth: Bytes
+  feeSigner: Bytes
+  emergencyPauser: Bytes
   updatedAt: BigInt
   updatedAtBlock: BigInt
 }
