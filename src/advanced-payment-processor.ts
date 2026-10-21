@@ -32,7 +32,7 @@ import {
   recordPaymentVolume,
 } from "./util/metrics";
 import { trackUser } from "./util/user";
-import { creditFee } from "./util/fees";
+import { creditFee, feeTokenFor } from "./util/fees";
 import {
   ADVANCED,
   CANCELED,
@@ -120,7 +120,12 @@ function creditInvoiceFee(
 ): void {
   const failedTx = invoice.feeTransferFailedTx;
   if (failedTx !== null && failedTx.equals(event.transaction.hash)) return;
-  creditFee(resolveFeeReceiver(invoice), invoiceToken(invoice), fee, event);
+  creditFee(
+    resolveFeeReceiver(invoice),
+    feeTokenFor(invoiceToken(invoice)),
+    fee,
+    event,
+  );
 }
 
 function invoiceToken(invoice: AdvancedPaymentProcessor): Address {
