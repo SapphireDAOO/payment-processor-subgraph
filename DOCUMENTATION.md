@@ -50,7 +50,7 @@ The manifest (`subgraph.yaml`) is currently configured for a **local chain** (`n
 
 | Event                                                  | Handler                       | Description                                                          |
 | ------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------------- |
-| `InvoiceCreated(invoiceId, invoice)`                   | `handleInvoiceCreated`        | Creates the `SimplePaymentProcessor` entity and the seller `User`   |
+| `InvoiceCreated(invoiceId, seller, invoiceNonce, price, expiresAt, feeRate)` | `handleInvoiceCreated` | Creates the `SimplePaymentProcessor` entity and the seller `User`   |
 | `InvoicePaid(invoiceId, buyer, amountPaid, sellerActionDeadline)` | `handleInvoicePaid`  | Records buyer, amount paid and seller action deadline; adds volume/escrow |
 | `InvoiceAccepted(invoiceId, feeReceiver)`              | `handleInvoiceAccepted`       | Records the `feeReceiver` and sets `releaseAt` (default hold period) |
 | `InvoiceCanceled(invoiceId)`                           | `handleInvoiceCanceled`       | Marks the invoice `CANCELED`                                         |
@@ -67,8 +67,8 @@ The manifest (`subgraph.yaml`) is currently configured for a **local chain** (`n
 
 | Event                                                                    | Handler                                 | Description                                                                |
 | ------------------------------------------------------------------------ | --------------------------------------- | -------------------------------------------------------------------------- |
-| `InvoiceCreated(invoiceId, invoice)`                                     | `handleAdvancedPaymentProcessorCreated` | Creates the `AdvancedPaymentProcessor` entity, links `metaInvoice` if any  |
-| `InvoicePaid(invoiceId, paymentToken, escrowAddress, amount, releaseAt, feeReceiver)` | `handleInvoicePaid`       | Records payment, token, escrow, `releaseAt`, `feeReceiver`; adds volume/escrow |
+| `InvoiceCreated(invoiceId, seller, metaInvoiceId, orderId, invoiceNonce, price, expiresAt, holdPeriod, feeRate)` | `handleAdvancedPaymentProcessorCreated` | Creates the `AdvancedPaymentProcessor` entity with its `orderId`, links `metaInvoice` if any |
+| `InvoicePaid(invoiceId, payer, paymentToken, escrowAddress, amount, releaseAt, feeReceiver)` | `handleInvoicePaid`       | Records the payer as buyer, payment, token, escrow, `releaseAt`, `feeReceiver`; adds volume/escrow |
 | `InvoiceCanceled(invoiceId)`                                             | `handleInvoiceCanceled`                 | Marks invoice `CANCELED`                                                    |
 | `DisputeCreated(invoiceId)`                                              | `handleDisputeCreated`                  | Marks invoice `DISPUTED`                                                    |
 | `DisputeDismissed(invoiceId)`                                            | `handleDisputeDismissed`                | Marks invoice `DISPUTE_DISMISSED`                                           |
@@ -151,7 +151,7 @@ One invoice on the SimplePaymentProcessor contract. The `id` is the on-chain `in
 | Field            | Type                          | Description                                                            |
 | ---------------- | ----------------------------- | --------------------------------------------------------------------- |
 | `id`             | `ID!`                         | On-chain invoice ID (numeric string)                                  |
-| `invoiceNonce`   | `BigInt!`                     | Internal invoice nonce from the invoice struct                        |
+| `invoiceNonce`   | `BigInt!`                     | Internal invoice nonce                                                |
 | `state`          | `SimplePaymentProcessorState!`| Current lifecycle state (see [State Machine](#41-simple-payment-processor-states)) |
 | `seller`         | `User!`                       | Seller who created the invoice                                        |
 | `buyer`          | `User`                        | Buyer who paid (null until paid)                                      |
@@ -177,6 +177,7 @@ One invoice on the AdvancedPaymentProcessor contract; supports multi-token payme
 | Field                             | Type                            | Description                                                            |
 | --------------------------------- | ------------------------------- | --------------------------------------------------------------------- |
 | `id`                              | `ID!`                           | On-chain invoice ID (numeric string)                                  |
+| `orderId`                         | `String!`                       | Caller-supplied order identifier the invoice ID is derived from       |
 | `invoiceNonce`                    | `BigInt!`                       | Internal invoice nonce                                                |
 | `state`                           | `AdvancedPaymentProcessorState!`| Current lifecycle state (see [State Machine](#42-advanced-payment-processor-states)) |
 | `buyer`                           | `User`                          | Buyer address (null until paid)                                       |

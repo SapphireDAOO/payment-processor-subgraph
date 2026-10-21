@@ -41,6 +41,7 @@ function mockToken(token: string, name: string, decimals: i32): void {
 
 function seedInvoice(): void {
   const invoice = new AdvancedPaymentProcessor(INVOICE);
+  invoice.orderId = "order-1";
   invoice.invoiceNonce = BigInt.fromI32(1);
   invoice.state = "CREATED";
   invoice.seller = SELLER;

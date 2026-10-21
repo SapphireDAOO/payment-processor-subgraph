@@ -583,58 +583,52 @@
         "internalType": "uint216"
       },
       {
-        "name": "invoice",
-        "type": "tuple",
+        "name": "seller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "metaInvoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      },
+      {
+        "name": "orderId",
+        "type": "string",
         "indexed": false,
-        "internalType": "struct IIntermediatedPaymentProcessor.Invoice",
-        "components": [
-          {
-            "name": "invoiceNonce",
-            "type": "uint216",
-            "internalType": "uint216"
-          },
-          { "name": "paidAt", "type": "uint40", "internalType": "uint40" },
-          { "name": "createdAt", "type": "uint40", "internalType": "uint40" },
-          { "name": "releaseAt", "type": "uint40", "internalType": "uint40" },
-          { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
-          { "name": "state", "type": "uint8", "internalType": "uint8" },
-          {
-            "name": "withdrawalRetries",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          {
-            "name": "escrowHoldPeriod",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          { "name": "feeRate", "type": "uint16", "internalType": "uint16" },
-          {
-            "name": "metaInvoiceId",
-            "type": "uint216",
-            "internalType": "uint216"
-          },
-          { "name": "buyer", "type": "address", "internalType": "address" },
-          { "name": "seller", "type": "address", "internalType": "address" },
-          { "name": "escrow", "type": "address", "internalType": "address" },
-          {
-            "name": "paymentToken",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "feeReceiver",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "amountPaid",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          { "name": "price", "type": "uint256", "internalType": "uint256" },
-          { "name": "balance", "type": "uint256", "internalType": "uint256" }
-        ]
+        "internalType": "string"
+      },
+      {
+        "name": "invoiceNonce",
+        "type": "uint216",
+        "indexed": false,
+        "internalType": "uint216"
+      },
+      {
+        "name": "price",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "expiresAt",
+        "type": "uint40",
+        "indexed": false,
+        "internalType": "uint40"
+      },
+      {
+        "name": "holdPeriod",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      },
+      {
+        "name": "feeRate",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
       }
     ],
     "anonymous": false
@@ -648,6 +642,12 @@
         "type": "uint216",
         "indexed": true,
         "internalType": "uint216"
+      },
+      {
+        "name": "payer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       },
       {
         "name": "paymentToken",

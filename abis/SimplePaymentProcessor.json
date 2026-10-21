@@ -364,48 +364,34 @@
         "internalType": "uint216"
       },
       {
-        "name": "invoice",
-        "type": "tuple",
+        "name": "seller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "invoiceNonce",
+        "type": "uint216",
         "indexed": false,
-        "internalType": "struct ISimplePaymentProcessor.Invoice",
-        "components": [
-          {
-            "name": "invoiceNonce",
-            "type": "uint216",
-            "internalType": "uint216"
-          },
-          { "name": "createdAt", "type": "uint40", "internalType": "uint40" },
-          { "name": "paidAt", "type": "uint40", "internalType": "uint40" },
-          { "name": "releaseAt", "type": "uint40", "internalType": "uint40" },
-          { "name": "expiresAt", "type": "uint40", "internalType": "uint40" },
-          {
-            "name": "sellerActionDeadline",
-            "type": "uint40",
-            "internalType": "uint40"
-          },
-          {
-            "name": "escrowHoldPeriod",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          { "name": "state", "type": "uint8", "internalType": "uint8" },
-          {
-            "name": "withdrawalRetries",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          { "name": "feeRate", "type": "uint16", "internalType": "uint16" },
-          { "name": "seller", "type": "address", "internalType": "address" },
-          { "name": "buyer", "type": "address", "internalType": "address" },
-          { "name": "escrow", "type": "address", "internalType": "address" },
-          {
-            "name": "feeReceiver",
-            "type": "address",
-            "internalType": "address"
-          },
-          { "name": "price", "type": "uint256", "internalType": "uint256" },
-          { "name": "balance", "type": "uint256", "internalType": "uint256" }
-        ]
+        "internalType": "uint216"
+      },
+      {
+        "name": "price",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "expiresAt",
+        "type": "uint40",
+        "indexed": false,
+        "internalType": "uint40"
+      },
+      {
+        "name": "feeRate",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
       }
     ],
     "anonymous": false

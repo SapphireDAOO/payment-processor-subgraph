@@ -103,16 +103,16 @@ export function handleInvoiceCreated(event: InvoiceCreatedEvent): void {
   const id = event.params.invoiceId.toString();
   const invoice = new SimplePaymentProcessor(id);
 
-  const sellerId = event.params.invoice.seller.toHex();
-  trackUser(event.params.invoice.seller, CREATOR, event.block.timestamp);
+  const sellerId = event.params.seller.toHex();
+  trackUser(event.params.seller, CREATOR, event.block.timestamp);
 
-  invoice.invoiceNonce = event.params.invoice.invoiceNonce;
+  invoice.invoiceNonce = event.params.invoiceNonce;
   invoice.seller = sellerId;
   invoice.state = CREATED;
-  invoice.price = event.params.invoice.price;
+  invoice.price = event.params.price;
   invoice.contract = event.address;
   invoice.lastActionTime = event.block.timestamp;
-  invoice.expiresAt = event.params.invoice.expiresAt;
+  invoice.expiresAt = event.params.expiresAt;
 
   invoice.save();
   saveInvoiceEvent(event, id, INVOICE_CREATED);

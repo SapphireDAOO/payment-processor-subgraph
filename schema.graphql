@@ -111,6 +111,8 @@ type SimplePaymentProcessor @entity(immutable: false) {
 # commission url is either in release or dispute
 type AdvancedPaymentProcessor @entity(immutable: false) {
   id: ID!
+  # Caller-supplied order identifier the on-chain invoice ID is derived from.
+  orderId: String!
   invoiceNonce: BigInt!
   state: AdvancedPaymentProcessorState!
   buyer: User

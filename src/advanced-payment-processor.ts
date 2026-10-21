@@ -133,20 +133,19 @@ export function handleAdvancedPaymentProcessorCreated(
   event: InvoiceCreatedEvent,
 ): void {
   const id = event.params.invoiceId.toString();
-  const invoiceNonce = event.params.invoice.invoiceNonce;
 
   const invoice = new AdvancedPaymentProcessor(id);
 
-  //
-  const sellerId = event.params.invoice.seller.toHex();
+  const sellerId = event.params.seller.toHex();
 
-  trackUser(event.params.invoice.seller, CREATOR, event.block.timestamp);
+  trackUser(event.params.seller, CREATOR, event.block.timestamp);
 
+  invoice.orderId = event.params.orderId;
   invoice.seller = sellerId;
   invoice.state = CREATED;
-  invoice.price = event.params.invoice.price;
+  invoice.price = event.params.price;
   invoice.contract = event.address;
-  invoice.invoiceNonce = invoiceNonce;
+  invoice.invoiceNonce = event.params.invoiceNonce;
   invoice.lastActionTime = event.block.timestamp;
   invoice.amountReleased = ZERO;
   invoice.amountRefunded = ZERO;
@@ -155,7 +154,7 @@ export function handleAdvancedPaymentProcessorCreated(
   // Populated by PaymentTokensRegistered, emitted right after this event.
   invoice.expectedPaymentTokens = [];
 
-  const metaInvoiceId = event.params.invoice.metaInvoiceId;
+  const metaInvoiceId = event.params.metaInvoiceId;
   if (metaInvoiceId.gt(ZERO)) {
     invoice.metaInvoice = metaInvoiceId.toString();
   }
@@ -186,13 +185,12 @@ export function handleInvoicePaid(event: InvoicePaidV2Event): void {
   if (!invoice) return;
 
   const amountPaid = event.params.amount;
-  const buyerId = event.transaction.from.toHex();
 
-  trackUser(event.transaction.from, PAYER, event.block.timestamp);
+  trackUser(event.params.payer, PAYER, event.block.timestamp);
 
   const token = getOrCreatePaymentToken(event.params.paymentToken);
 
-  invoice.buyer = buyerId;
+  invoice.buyer = event.params.payer.toHex();
   invoice.amountPaid = amountPaid;
   invoice.balance = amountPaid;
   invoice.state = PAID;
