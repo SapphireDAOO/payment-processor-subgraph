@@ -73,6 +73,7 @@ The manifest (`subgraph.yaml`) is currently configured for a **local chain** (`n
 | `DisputeCreated(invoiceId)`                                              | `handleDisputeCreated`                  | Marks invoice `DISPUTED`                                                    |
 | `DisputeDismissed(invoiceId)`                                            | `handleDisputeDismissed`                | Marks invoice `DISPUTE_DISMISSED`                                           |
 | `DisputeResolved(invoiceId)`                                             | `handleDisputeResolved`                 | Marks invoice `DISPUTE_RESOLVED`                                            |
+| `DisputeExpired(invoiceId)`                                              | `handleDisputeExpired`                  | Marks invoice `DISPUTE_EXPIRED`                                             |
 | `DisputeSettled(invoiceId, sellerAmount, buyerAmount)`                   | `handleDisputeSettled`                  | Marks `DISPUTE_SETTLED`; records split amounts; reverses escrow            |
 | `MetaInvoiceCreated(metaInvoiceId, totalPrice)`                          | `handleMetaInvoiceCreated`              | Creates a `MetaInvoice` entity                                             |
 | `PaymentReleased(invoiceId, receiver, currency, sellerAmount)`           | `handlePaymentReleased`                 | Marks `RELEASED`, zeroes balance; reverses escrow + recent tx             |
@@ -417,21 +418,21 @@ hold period
               │
    ┌──────────┼──────────────┐
    │          │              │
- admin      buyer          hold period
- refunds   disputes         elapses
+ admin      buyer           admin
+ refunds   disputes        releases
    │          │              │
    │     ┌────▼────────┐  ┌──▼──────┐
    │     │  DISPUTED   │  │RELEASED │
    │     └────┬────────┘  └─────────┘
    │          │
-   │  ┌───────┼───────────────┐
-   │  │       │               │
-   │ admin  admin            admin
-   │dismiss resolve          settle
-   │  │       │               │
-   │  ▼       ▼               ▼
-   │ DISPUTE_  DISPUTE_     DISPUTE_
-   │DISMISSED  RESOLVED     SETTLED
+   │  ┌───────┼───────────┬───────────┐
+   │  │       │           │           │
+   │ admin  admin       admin       admin
+   │dismiss resolve     expire      settle
+   │  │       │           │           │
+   │  ▼       ▼           ▼           ▼
+   │ DISPUTE_  DISPUTE_  DISPUTE_   DISPUTE_
+   │DISMISSED  RESOLVED  EXPIRED    SETTLED
    │
    ▼
 REFUNDED
@@ -447,6 +448,7 @@ REFUNDED
 | `DISPUTE_DISMISSED` | Admin dismissed the dispute; invoice returns to normal flow   |
 | `DISPUTE_RESOLVED`  | Admin resolved the dispute in one party's favor               |
 | `DISPUTE_SETTLED`   | Admin split the funds between buyer and seller                |
+| `DISPUTE_EXPIRED`   | Admin expired a lapsed dispute; invoice returns to normal flow |
 | `REFUNDED`          | Escrow balance refunded to buyer                              |
 
 ---

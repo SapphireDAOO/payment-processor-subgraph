@@ -86,6 +86,8 @@ dataSources:
           handler: handleDisputeDismissed
         - event: DisputeResolved(indexed uint216)
           handler: handleDisputeResolved
+        - event: DisputeExpired(indexed uint216)
+          handler: handleDisputeExpired
         - event: DisputeSettled(indexed uint216,uint256,uint256,uint256)
           handler: handleDisputeSettled
         - event: EscrowCreated(indexed uint216,indexed address)

@@ -146,6 +146,15 @@
   },
   {
     "type": "function",
+    "name": "expireDispute",
+    "inputs": [
+      { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "getInvoice",
     "inputs": [
       { "name": "_invoiceId", "type": "uint216", "internalType": "uint216" }
@@ -201,8 +210,7 @@
             "internalType": "uint256"
           },
           { "name": "price", "type": "uint256", "internalType": "uint256" },
-          { "name": "balance", "type": "uint256", "internalType": "uint256" },
-          { "name": "orderId", "type": "string", "internalType": "string" }
+          { "name": "balance", "type": "uint256", "internalType": "uint256" }
         ]
       }
     ],
@@ -455,6 +463,19 @@
   {
     "type": "event",
     "name": "DisputeDismissed",
+    "inputs": [
+      {
+        "name": "invoiceId",
+        "type": "uint216",
+        "indexed": true,
+        "internalType": "uint216"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DisputeExpired",
     "inputs": [
       {
         "name": "invoiceId",

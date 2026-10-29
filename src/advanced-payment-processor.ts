@@ -2,6 +2,7 @@ import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import {
   DisputeCreated as DisputeCreatedEvent,
   DisputeDismissed as DisputeDismissedEvent,
+  DisputeExpired as DisputeExpiredEvent,
   DisputeResolved as DisputeResolvedEvent,
   DisputeSettled as DisputeSettledEvent,
   EscrowCreated as EscrowCreatedEvent,
@@ -41,6 +42,8 @@ import {
   DISPUTE_CREATED,
   DISPUTE_DISMISSED,
   DISPUTE_DISMISSED_EVENT,
+  DISPUTE_EXPIRED,
+  DISPUTE_EXPIRED_EVENT,
   DISPUTE_RESOLVED,
   DISPUTE_RESOLVED_EVENT,
   DISPUTE_SETTLED,
@@ -279,6 +282,18 @@ export function handleDisputeResolved(event: DisputeResolvedEvent): void {
 
   invoice.save();
   saveInvoiceEvent(event, id, DISPUTE_RESOLVED_EVENT, true);
+}
+
+export function handleDisputeExpired(event: DisputeExpiredEvent): void {
+  const id = event.params.invoiceId.toString();
+  const invoice = AdvancedPaymentProcessor.load(id);
+  if (!invoice) return;
+
+  invoice.state = DISPUTE_EXPIRED;
+  invoice.lastActionTime = event.block.timestamp;
+
+  invoice.save();
+  saveInvoiceEvent(event, id, DISPUTE_EXPIRED_EVENT, true);
 }
 
 export function handleDisputeSettled(event: DisputeSettledEvent): void {
