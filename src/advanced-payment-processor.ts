@@ -313,13 +313,15 @@ export function handleRefunded(event: RefundedEvent): void {
 
   if (invoice.balance) {
     invoice.balance = invoice.balance!.minus(event.params.amount);
+    if (invoice.balance!.isZero()) {
+      invoice.state = REFUNDED;
+    }
   }
 
   const previousRefunded = invoice.amountRefunded
     ? invoice.amountRefunded!
     : ZERO;
 
-  invoice.state = REFUNDED;
   invoice.lastActionTime = event.block.timestamp;
   invoice.amountRefunded = previousRefunded.plus(event.params.amount);
 
